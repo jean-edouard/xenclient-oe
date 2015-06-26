@@ -1,7 +1,7 @@
 Index: linux-3.18.16/drivers/gpu/drm/i915/i915_gem.c
 ===================================================================
---- linux-3.18.16.orig/drivers/gpu/drm/i915/i915_gem.c	2015-06-14 18:19:31.000000000 +0200
-+++ linux-3.18.16/drivers/gpu/drm/i915/i915_gem.c	2015-06-19 15:19:36.152584404 +0200
+--- linux-3.18.16.orig/drivers/gpu/drm/i915/i915_gem.c	2015-06-26 19:08:12.446850412 +0200
++++ linux-3.18.16/drivers/gpu/drm/i915/i915_gem.c	2015-06-26 19:08:31.363297376 +0200
 @@ -478,8 +478,10 @@
  	}
  
@@ -95,11 +95,15 @@ Index: linux-3.18.16/drivers/gpu/drm/i915/i915_gem.c
  	if (flags & PIN_GLOBAL && !obj->has_global_gtt_mapping)
 Index: linux-3.18.16/drivers/gpu/drm/i915/i915_gem_foreign.c
 ===================================================================
---- linux-3.18.16.orig/drivers/gpu/drm/i915/i915_gem_foreign.c	2015-06-19 15:19:19.089450304 +0200
-+++ linux-3.18.16/drivers/gpu/drm/i915/i915_gem_foreign.c	2015-06-19 15:19:36.332582302 +0200
-@@ -72,6 +72,12 @@
- 	for (i = 0; i < num_pages; i++)
- 		if (m2p_remove_override(vmap->pvec[i], NULL, vmap->mfns[i]))
+--- linux-3.18.16.orig/drivers/gpu/drm/i915/i915_gem_foreign.c	2015-06-26 19:08:28.166667849 +0200
++++ linux-3.18.16/drivers/gpu/drm/i915/i915_gem_foreign.c	2015-06-26 19:11:31.984533671 +0200
+@@ -69,9 +69,16 @@
+ {
+ 	int i;
+ 
+-	for (i = 0; i < num_pages; i++)
++	for (i = 0; i < num_pages; i++) {
+ 		if (m2p_remove_override_legacy(vmap->pvec[i]))
  			BUG();
 +		if (!(i % 100)) {
 +			DRM_DEBUG_DRIVER("Foreign unmap(%d) pfn = %lx, kaddr = %p\n",
@@ -107,10 +111,11 @@ Index: linux-3.18.16/drivers/gpu/drm/i915/i915_gem_foreign.c
 +					 pfn_to_kaddr(page_to_pfn(vmap->pvec[i])));
 +
 +		}
++        }
  }
  
  static int
-@@ -82,6 +88,7 @@
+@@ -82,6 +89,7 @@
  	struct scatterlist *sg = NULL;
  	int i, ret;
  
@@ -118,7 +123,7 @@ Index: linux-3.18.16/drivers/gpu/drm/i915/i915_gem_foreign.c
  	vmap->pvec = kmalloc(vmap->num_pages * sizeof(struct page *),
  			 GFP_KERNEL | __GFP_NOWARN | __GFP_NORETRY);
  	if (vmap->pvec == NULL) {
-@@ -127,9 +134,18 @@
+@@ -127,9 +135,18 @@
  			i915_gem_foreign_remove_override(vmap, i - 1);
  			goto err1;
  		}
@@ -137,7 +142,7 @@ Index: linux-3.18.16/drivers/gpu/drm/i915/i915_gem_foreign.c
  		sg_set_page(sg, vmap->pvec[i], PAGE_SIZE, 0);
  	}
  
-@@ -155,6 +171,7 @@
+@@ -155,6 +172,7 @@
  	struct i915_gem_foreign_object *vmap = to_foreign_object(obj);
  	int num_pages = obj->base.size >> PAGE_SHIFT;
  
@@ -145,7 +150,7 @@ Index: linux-3.18.16/drivers/gpu/drm/i915/i915_gem_foreign.c
  	i915_gem_foreign_remove_override(vmap, num_pages);
  
  	i915_gem_foreign_free_pages(vmap, num_pages);
-@@ -192,6 +209,8 @@
+@@ -192,6 +210,8 @@
  	int ret = -ENOMEM;
  	u32 handle;
  
