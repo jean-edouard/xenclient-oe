@@ -1,57 +1,8 @@
 Index: linux-3.18.16/drivers/tty/hvc/hvc_console.c
 ===================================================================
---- linux-3.18.16.orig/drivers/tty/hvc/hvc_console.c	2015-07-07 16:18:41.056509681 +0200
-+++ linux-3.18.16/drivers/tty/hvc/hvc_console.c	2015-07-08 15:40:33.118736200 +0200
-@@ -46,6 +46,9 @@
- 
- #include "hvc_console.h"
- 
-+#define DPRINTK(fmt, ...) \
-+    printk(KERN_ERR "HUGINN:%s:%d: " fmt "\n", "drivers/tty/hvm/hvc_console.c", __LINE__, ##__VA_ARGS__)
-+
- #define HVC_MAJOR	229
- #define HVC_MINOR	0
- 
-@@ -318,6 +321,7 @@
- 	struct hvc_struct *hp;
- 	int rc;
- 
-+        DPRINTK("%s: entering...", __FUNCTION__);
- 	/* Auto increments kref reference if found. */
- 	if (!(hp = hvc_get_by_index(tty->index)))
- 		return -ENODEV;
-@@ -340,6 +344,7 @@
- 	unsigned long flags;
- 	int rc = 0;
- 
-+        DPRINTK("%s: entering...", __FUNCTION__);
- 	spin_lock_irqsave(&hp->port.lock, flags);
- 	/* Check and then increment for fast path open. */
- 	if (hp->port.count++ > 0) {
-@@ -382,6 +387,7 @@
- 	struct hvc_struct *hp;
- 	unsigned long flags;
- 
-+        DPRINTK("%s: entering...", __FUNCTION__);
- 	if (tty_hung_up_p(filp))
- 		return;
- 
-@@ -430,6 +436,7 @@
- {
- 	struct hvc_struct *hp = tty->driver_data;
- 
-+        DPRINTK("%s: entering...", __FUNCTION__);
- 	tty_port_put(&hp->port);
- }
- 
-@@ -801,17 +808,22 @@
- #ifdef CONFIG_CONSOLE_POLL
- static int hvc_poll_init(struct tty_driver *driver, int line, char *options)
- {
-+        DPRINTK("%s: entering...", __FUNCTION__);
- 	return 0;
- }
- 
+--- linux-3.18.16.orig/drivers/tty/hvc/hvc_console.c	2015-06-14 18:19:31.000000000 +0200
++++ linux-3.18.16/drivers/tty/hvc/hvc_console.c	2015-07-09 12:40:24.574872049 +0200
+@@ -807,11 +807,13 @@
  static int hvc_poll_get_char(struct tty_driver *driver, int line)
  {
  	struct tty_struct *tty = driver->ttys[0];
@@ -63,13 +14,11 @@ Index: linux-3.18.16/drivers/tty/hvc/hvc_console.c
  	char ch;
  
 -	n = hp->ops->get_chars(hp->vtermno, &ch, 1);
-+        // XXX: WE SHOULDN'T GO THERE!!!!
-+        DPRINTK("%s: entering...", __FUNCTION__);
 +	n = ops->get_chars(vtno, &ch, 1);
  
  	if (n == 0)
  		return NO_POLL_CHAR;
-@@ -822,11 +834,15 @@
+@@ -822,11 +824,14 @@
  static void hvc_poll_put_char(struct tty_driver *driver, int line, char ch)
  {
  	struct tty_struct *tty = driver->ttys[0];
@@ -80,7 +29,6 @@ Index: linux-3.18.16/drivers/tty/hvc/hvc_console.c
 +
  	int n;
  
-+        DPRINTK("%s: entering...", __FUNCTION__);
  	do {
 -		n = hp->ops->put_chars(hp->vtermno, &ch, 1);
 +		n = ops->put_chars(vtno, &ch, 1);
@@ -89,8 +37,8 @@ Index: linux-3.18.16/drivers/tty/hvc/hvc_console.c
  #endif
 Index: linux-3.18.16/kernel/debug/debug_core.c
 ===================================================================
---- linux-3.18.16.orig/kernel/debug/debug_core.c	2015-07-07 16:18:41.199841469 +0200
-+++ linux-3.18.16/kernel/debug/debug_core.c	2015-07-08 15:36:41.681192676 +0200
+--- linux-3.18.16.orig/kernel/debug/debug_core.c	2015-06-14 18:19:31.000000000 +0200
++++ linux-3.18.16/kernel/debug/debug_core.c	2015-07-08 16:33:54.711616620 +0200
 @@ -592,12 +592,14 @@
  		kgdb_roundup_cpus(flags);
  #endif
