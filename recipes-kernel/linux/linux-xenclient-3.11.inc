@@ -14,7 +14,6 @@ SRC_URI = "http://mirror.openxt.org/linux-3.11.10.4.tar.gz;name=kernel \
     file://xen-acpi-wmi.patch;patch=1 \
     file://bridge-carrier-follow-prio0.patch;patch=1 \
     file://privcmd-mmapnocache-ioctl.patch;patch=1 \
-    file://usb-mass-storage-no-autobind.patch;patch=1 \
     file://xenkbd-tablet-resolution.patch;patch=1 \
     file://guest-os-controlled-brightness-support.patch;patch=1 \
     file://acpi-video-delay-init.patch;patch=1 \
