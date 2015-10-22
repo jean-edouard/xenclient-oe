@@ -110,6 +110,7 @@ RDEPENDS_${PN} = " \
     linuxfb-surfman-plugin \
     dm-agent \
     xenmgr \
+    superhid \
 "
 
 # OE upgrade - temporarly disabled:

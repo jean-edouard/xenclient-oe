@@ -1,0 +1,21 @@
+DESCRIPTION = "SuperHID"
+LICENSE = "GPLv2"
+LIC_FILES_CHKSUM="file://COPYING;md5=4641e94ec96f98fabc56ff9cc48be14b"
+DEPENDS = " libusb-compat xen-tools libv4v libxcdbus xenclient-idl xenclient-rpcgen-native libevent libxcxenstore"
+RDEPENDS += "libxcxenstore"
+
+PV = "0+git${SRCPV}"
+
+SRCREV = "${AUTOREV}"
+SRC_URI = "git://github.com/jean-edouard/superhid.git;protocol=https;branch=daemon \
+           "
+
+EXTRA_OECONF += "--with-idldir=${STAGING_IDLDIR}"
+# workaround for broken configure.in
+EXTRA_OECONF += "--with-libexpat=${STAGING_LIBDIR}"
+EXTRA_OECONF += "--with-libxenstore=${STAGING_LIBDIR}"
+
+S = "${WORKDIR}/git"
+
+inherit autotools
+inherit xenclient
