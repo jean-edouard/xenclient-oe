@@ -40,6 +40,31 @@ python do_force_rebuild() {
     sstate_clean_cachefiles(d)
 }
 
+python do_checkout() {
+    from bb import note,build
+    import re
+
+    src = bb.data.getVar("SRC_URI", d, True)
+
+    # The following like will list the whole bb environment, very useful!
+    # all = bb.data.keys(d)
+    # for x in all:
+    #     note("%s = %s" % (x, bb.data.getVar(x, d, True)))
+
+    branches = re.findall('branch=[^ \t\n\r\f\v,]+', src)
+    if len(branches) == 1 :
+        branch = branches[0].split('=')[1]
+        command = 'git checkout ' + branch
+        workdir = bb.data.getVar('S', d, True)
+        note('Switching the git clone to %s. You\'re welcome.' % branch)
+        note('  Directory: %s' % workdir)
+        note('  Command: %s' % command)
+        os.chdir(workdir)
+        bb.process.run(command, shell=True)
+}
+
+addtask checkout after do_unpack before do_patch
+
 addtask do_force_rebuild
 do_force_rebuild[depends] = ""
 do_force_rebuild[nostamp] = "1"
