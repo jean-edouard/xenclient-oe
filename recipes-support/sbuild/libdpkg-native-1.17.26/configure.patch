@@ -1,0 +1,47 @@
+diff --git a/Makefile.am b/Makefile.am
+index aa13270..5c10e16 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -12,7 +12,6 @@ SUBDIRS = \
+ 	utils \
+ 	$(MAYBE_DSELECT) \
+ 	scripts \
+-	po \
+ 	man
+ 
+ ACLOCAL_AMFLAGS = -I m4
+diff --git a/configure.ac b/configure.ac
+index ded48fd..18461b8 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -129,7 +129,6 @@ AC_CONFIG_FILES([ Makefile
+ 		  dpkg-split/Makefile
+ 		  dselect/Makefile
+ 		  dselect/methods/Makefile
+-		  dselect/po/Makefile.in
+ 		  lib/Makefile
+ 		  lib/compat/Makefile
+ 		  lib/dpkg/Makefile
+@@ -137,10 +136,8 @@ AC_CONFIG_FILES([ Makefile
+ 		  lib/dpkg/test/Makefile
+ 		  doc/Doxyfile
+ 		  man/Makefile
+-		  po/Makefile.in
+ 		  scripts/Makefile
+ 		  scripts/mk/Makefile
+-		  scripts/po/Makefile.in
+ 		  src/Makefile
+ 		  utils/Makefile ])
+ AC_CONFIG_HEADERS([config.h])
+diff --git a/scripts/Makefile.am b/scripts/Makefile.am
+index dd18d92..6662b53 100644
+--- a/scripts/Makefile.am
++++ b/scripts/Makefile.am
+@@ -1,6 +1,6 @@
+ ## Process this file with automake to produce Makefile.in
+ 
+-SUBDIRS = mk po
++SUBDIRS = mk
+ 
+ bin_SCRIPTS = \
+ 	dpkg-architecture \

@@ -1,7 +1,7 @@
 SRC_URI = "git://anonscm.debian.org/buildd-tools/sbuild;protocol=git;branch=master"
 SRCREV = "release/sbuild-${PV}"
 
-DEPENDS = "perl-native filesys-df-perl-native"
+DEPENDS = "perl-native filesys-df-perl-native libdpkg-native"
 
 LICENSE = "GPLv2"
 LIC_FILES_CHKSUM = "file://COPYING;md5=4325afd396febcb659c36b49533135d4"
@@ -26,6 +26,14 @@ do_configure_prepend() {
 do_compile_prepend() {
     export PATH="${STAGING_DIR_NATIVE}/usr/bin/perl-native:$PATH"
     sed -i 's|^#\!/usr/bin/perl$|#!/usr/bin/env perl|' tools/sbuild-dumpconfig
+}
+
+do_install_append() {
+      mkdir -p ${D}/${STAGING_DIR_NATIVE}/usr/lib/perl-native/perl
+      ln -s ${D}/${STAGING_DIR_NATIVE}/usr/share/perl5/Sbuild ${D}/${STAGING_DIR_NATIVE}/usr/lib/perl-native/perl/Sbuild
+      ln -s ${D}/${STAGING_DIR_NATIVE}/usr/share/perl5/Sbuild.pm ${D}/${STAGING_DIR_NATIVE}/usr/lib/perl-native/perl/Sbuild.pm
+      ln -s ${D}/${STAGING_DIR_NATIVE}/usr/share/perl5/Buildd ${D}/${STAGING_DIR_NATIVE}/usr/lib/perl-native/perl/Buildd
+      ln -s ${D}/${STAGING_DIR_NATIVE}/usr/share/perl5/Buildd.pm ${D}/${STAGING_DIR_NATIVE}/usr/lib/perl-native/perl/Buildd.pm
 }
 
 #FILES_${PN} += " /usr/share "

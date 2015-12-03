@@ -85,7 +85,7 @@ EOF
                         chmod +x "${S}/debian/rules"
 
                         cd "${S}"
-                        sbuild -n --arch=${SBUILD_ARCH} --dist=${SBUILD_SUITE} --purge=never --purge-deps=never
+                        PATH="${STAGING_DIR_NATIVE}/usr/bin/perl-native:$PATH" sbuild -n --arch=${SBUILD_ARCH} --dist=${SBUILD_SUITE} --purge=never --purge-deps=never
 
                         repo_dir=${STAGING_DIR}/debian_repos/${SBUILD_SUITE}/${SBUILD_ARCH}
                         cd "${repo_dir}/debian/"
