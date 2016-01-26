@@ -1,6 +1,8 @@
---- a/policy/modules/apps/xec.te	1969-12-31 19:00:00.000000000 -0500
-+++ b/policy/modules/apps/xec.te	2015-01-05 16:03:12.793080030 -0500
-@@ -0,0 +1,114 @@
+Index: refpolicy/policy/modules/apps/xec.te
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ refpolicy/policy/modules/apps/xec.te	2016-01-26 16:51:48.510588267 -0500
+@@ -0,0 +1,117 @@
 +#############################################################################
 +#
 +# Copyright (C) 2014 Citrix Systems, Inc.
@@ -97,6 +99,9 @@
 +# Generate data for statusreport
 +statusreport_write_storage_files(xec_t)
 +statusreport_getattr_storage_files(xec_t)
++
++# Let xec use /tmp files when called from the command line
++userdom_rw_user_tmp_files(xec_t)
 +
 +#######################################
 +#
