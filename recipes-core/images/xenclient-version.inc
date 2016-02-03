@@ -20,6 +20,11 @@ post_rootfs_version_commands() {
 		echo 'DefaultNICs = 0';
 	} > ${IMAGE_ROOTFS}/etc/xenclient.conf;
 
+	# Add /etc/repo-versions.conf
+	for repo_hash in ${REPO_HASHES}; do
+		echo `echo $repo_hash | cut -d ':' -f 1` = `echo $repo_hash | cut -d ':' -f 2`
+	done > ${IMAGE_ROOTFS}/etc/repo-versions.conf;
+
 	# Update /etc/issue and /etc/issue.net
 	{
 		echo 'OpenXT';
