@@ -22,11 +22,19 @@ RDEPENDS_${PN}-dev = ""
 
 PARALLEL_MAKE = ""
 
+FILES_${PN} = "${ocamllibdir}/dbus/*${SOLIBS}"
+FILES_${PN}-dev = "${ocamllibdir}/dbus/*${SOLIBSDEV}  \
+                   ${ocamllibdir}/dbus/*.cm*          \
+                   ${ocamllibdir}/dbus/META           \
+                  "
+FILES_${PN}-staticdev = "${ocamllibdir}/dbus/*.a"
+FILES_${PN}-dbg = "${ocamllibdir}/dbus/.debug/*"
+
 do_compile() {
 	oe_runmake \
-		OCAMLC="ocamlc -cc '${CC}'" \
-		OCAMLOPT="ocamlopt -cc '${CC}'" \
-		OCAMLMKLIB="ocamlmklib -L'${STAGING_DIR_TARGET}/lib' -L'${STAGING_DIR_TARGET}/usr/lib'"
+		OCAMLC="ocamlc -cc '${CC} -fPIC'" \
+		OCAMLOPT="ocamlopt -cc '${CC} -fPIC'" \
+		OCAMLMKLIB="ocamlmklib -elfmode -L'${STAGING_DIR_TARGET}/lib' -L'${STAGING_DIR_TARGET}/usr/lib'"
 
 }
 
