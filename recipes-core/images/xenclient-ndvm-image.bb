@@ -50,6 +50,7 @@ IMAGE_INSTALL = "\
     linux-firmware-iwlwifi-7260-9 \
     linux-firmware-iwlwifi-7265-8 \
     linux-firmware-iwlwifi-7265-9 \
+    linux-firmware-bnx2-mips \
     bridge-utils \
     iptables \
     xenclient-ndvm-tweaks \
