@@ -1,0 +1,13 @@
+Index: git/grub-core/loader/i386/multiboot_mbi.c
+===================================================================
+--- git.orig/grub-core/loader/i386/multiboot_mbi.c
++++ git/grub-core/loader/i386/multiboot_mbi.c
+@@ -174,7 +174,7 @@ grub_multiboot_load (grub_file_t file, c
+       return err;
+     }
+ 
+-  if (header->flags & MULTIBOOT_VIDEO_MODE)
++  if (1)
+     {
+       switch (header->mode_type)
+ 	{
