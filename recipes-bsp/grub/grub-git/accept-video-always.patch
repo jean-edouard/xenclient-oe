@@ -1,0 +1,22 @@
+Index: git/grub-core/loader/multiboot.c
+===================================================================
+--- git.orig/grub-core/loader/multiboot.c
++++ git/grub-core/loader/multiboot.c
+@@ -93,7 +93,7 @@ grub_multiboot_set_video_mode (void)
+   grub_err_t err;
+   const char *modevar;
+ 
+-#if GRUB_MACHINE_HAS_VGA_TEXT
++#if 0
+   if (accepts_video)
+ #endif
+     {
+@@ -110,7 +110,7 @@ grub_multiboot_set_video_mode (void)
+ 	  grub_free (tmp);
+ 	}
+     }
+-#if GRUB_MACHINE_HAS_VGA_TEXT
++#if 0
+   else
+     err = grub_video_set_mode ("text", 0, 0);
+ #endif
