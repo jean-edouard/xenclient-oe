@@ -6,7 +6,7 @@ Index: git/grub-core/normal/menu.c
    int default_entry, current_entry;
    int timeout;
    enum timeout_style timeout_style;
-+  char *tmp;
++  const char *tmp;
 +  int edit_and_shell = 0;
 +
 +  tmp = grub_env_get("edit_and_shell");
