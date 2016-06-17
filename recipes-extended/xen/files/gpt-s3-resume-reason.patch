@@ -27,7 +27,15 @@ Index: xen-4.6.1/xen/arch/x86/hvm/pmtimer.c
 ===================================================================
 --- xen-4.6.1.orig/xen/arch/x86/hvm/pmtimer.c
 +++ xen-4.6.1/xen/arch/x86/hvm/pmtimer.c
-@@ -82,6 +82,25 @@ void hvm_acpi_sleep_button(struct domain
+@@ -36,6 +36,7 @@
+ #define GBL_STS    (1 << 5)
+ #define PWRBTN_STS (1 << 8)
+ #define SLPBTN_STS (1 << 9)
++#define WAK_STS    (1 << 15)
+ 
+ /* The same in PM1a_EN */
+ #define TMR_EN     (1 << 0)
+@@ -82,6 +83,25 @@ void hvm_acpi_sleep_button(struct domain
      spin_unlock(&s->lock);
  }
  
@@ -45,7 +53,7 @@ Index: xen-4.6.1/xen/arch/x86/hvm/pmtimer.c
 +{
 +    PMTState *s = &d->arch.hvm_domain.pl_time.vpmt;
 +    spin_lock(&s->lock);
-+    s->pm.pm1a_sts |= RSM_STS;
++    s->pm.pm1a_sts |= WAK_STS;
 +    spin_unlock(&s->lock);
 +}
 +

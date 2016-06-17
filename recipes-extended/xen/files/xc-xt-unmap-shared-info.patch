@@ -7,7 +7,7 @@ Index: xen-4.6.1/xen/arch/x86/mm.c
      int rc;
      p2m_type_t p2mt;
 +    int unmap_shinfo = 0;
-+    unsigned long gpfn_new = xatp->gpfn;
++    xen_pfn_t gpfn_new = gpfn;
  
      switch ( space )
      {
@@ -53,7 +53,7 @@ Index: xen-4.6.1/xen/arch/x86/mm.c
 -            guest_physmap_remove_page(d, gpfn, prev_mfn, PAGE_ORDER_4K);
 -        else
 +            guest_physmap_remove_page(d, gpfn_new, prev_mfn, PAGE_ORDER_4K);
-+        else if ( xatp->space != XENMAPSPACE_shared_info )
++        else if ( space != XENMAPSPACE_shared_info )
              /* Normal domain memory is freed, to avoid leaking memory. */
 -            guest_remove_page(d, gpfn);
 +            guest_remove_page(d, gpfn_new);
@@ -75,7 +75,7 @@ Index: xen-4.6.1/xen/arch/x86/mm.c
      if ( space == XENMAPSPACE_gmfn || space == XENMAPSPACE_gmfn_range )
          put_gfn(d, gfn);
  
-+    if ( xatp->space == XENMAPSPACE_shared_info )
++    if ( space == XENMAPSPACE_shared_info )
 +    {
 +        /* save the shared info mapping to restore, if we are not unmapping */
 +        if (!unmap_shinfo)

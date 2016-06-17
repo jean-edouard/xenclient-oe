@@ -7,7 +7,7 @@ SRC_URI += "file://xenstored.initscript \
 "
 
 DEPENDS += " gettext ncurses openssl python zlib seabios ipxe gmp lzo glib-2.0 iasl-native xz "
-DEPENDS += "util-linux"
+DEPENDS += "util-linux pixman libaio yajl"
 # lzo2 required by libxenguest.
 RDEPENDS_${PN} += " lzo"
 
@@ -79,8 +79,6 @@ do_compile() {
         oe_runmake -C tools subdir-all-xenmon
         oe_runmake -C tools subdir-all-console
         oe_runmake -C tools subdir-all-xenstat
-        oe_runmake -C tools subdir-all-hvm-info
-        oe_runmake -C tools subdir-all-xen-libhvm
 }
 
 do_install() {
@@ -94,8 +92,6 @@ do_install() {
         oe_runmake DESTDIR=${D} -C tools subdir-install-xenmon
         oe_runmake DESTDIR=${D} -C tools subdir-install-console
         oe_runmake DESTDIR=${D} -C tools subdir-install-xenstat
-        oe_runmake DESTDIR=${D} -C tools subdir-install-hvm-info
-        oe_runmake DESTDIR=${D} -C tools subdir-install-xen-libhvm
 
 # Should not be necessary anymore
         rm -rf ${D}/etc/udev

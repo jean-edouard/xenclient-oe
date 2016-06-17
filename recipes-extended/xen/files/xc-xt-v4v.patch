@@ -587,7 +587,7 @@ Index: xen-4.6.1/xen/common/v4v.c
 +
 +  if ((V4V_ROUNDUP (len) + sizeof (struct v4v_ring_message_header)) >=
 +      ring_info->len)
-+      return -EMSGSIZE;
++      return -ENOBUFS;
 +
 +  do
 +    {
@@ -682,7 +682,7 @@ Index: xen-4.6.1/xen/common/v4v.c
 +
 +}
 +
-+static ssize_t
++static int
 +v4v_iov_count (XEN_GUEST_HANDLE (v4v_iov_t) iovs, int niov)
 +{
 +  v4v_iov_t iov;
@@ -702,7 +702,7 @@ Index: xen-4.6.1/xen/common/v4v.c
 +}
 +
 +/*caller must have L3*/
-+static ssize_t
++static int
 +v4v_ringbuf_insertv (struct domain *d,
 +                     struct v4v_ring_info *ring_info,
 +                     struct v4v_ring_id *src_id, uint32_t proto,
@@ -720,7 +720,7 @@ Index: xen-4.6.1/xen/common/v4v.c
 +
 +  if ((V4V_ROUNDUP (len) + sizeof (struct v4v_ring_message_header)) >=
 +      ring_info->len)
-+      return -EMSGSIZE;
++      return -ENOBUFS;
 +
 +  do
 +    {
@@ -1612,7 +1612,7 @@ Index: xen-4.6.1/xen/common/v4v.c
 +  if (!dst_d)
 +    {
 +      read_unlock (&v4v_lock);
-+      return -ECONNREFUSED;
++      return -ENOTCONN;
 +    }
 +
 +  /* XSM: verify if src is allowed to send to dst */
@@ -1620,7 +1620,7 @@ Index: xen-4.6.1/xen/common/v4v.c
 +    {
 +      printk(KERN_ERR "V4V: XSM REJECTED %i -> %i\n",
 +             src_addr->domain, dst_addr->domain);
-+      ret = -ECONNREFUSED;
++      ret = -EPERM;
 +      goto out;
 +    }
 +
@@ -1629,7 +1629,7 @@ Index: xen-4.6.1/xen/common/v4v.c
 +
 +      if (!dst_d->v4v)
 +        {
-+          ret = -ECONNREFUSED;
++          ret = -ENOTCONN;
 +          break;
 +        }
 +
@@ -1638,7 +1638,7 @@ Index: xen-4.6.1/xen/common/v4v.c
 +        v4v_ring_find_info_by_addr (dst_d, dst_addr, src_addr->domain);
 +
 +      if (!ring_info)
-+          ret = -ECONNREFUSED;
++          ret = -ENOTCONN;
 +      else
 +        {
 +          spin_lock (&ring_info->lock);
@@ -1714,7 +1714,7 @@ Index: xen-4.6.1/xen/common/v4v.c
 +  if (!dst_d)
 +    {
 +      read_unlock (&v4v_lock);
-+      return -ECONNREFUSED;
++      return -ENOTCONN;
 +    }
 +
 +  /* XSM: verify if src is allowed to send to dst */
@@ -1722,7 +1722,7 @@ Index: xen-4.6.1/xen/common/v4v.c
 +    {
 +      printk(KERN_ERR "V4V: XSM REJECTED %i -> %i\n",
 +             src_addr->domain, dst_addr->domain);
-+      ret = -ECONNREFUSED;
++      ret = -ENOTCONN;
 +      goto out;
 +    }
 +
@@ -1731,7 +1731,7 @@ Index: xen-4.6.1/xen/common/v4v.c
 +
 +      if (!dst_d->v4v)
 +        {
-+          ret = -ECONNREFUSED;
++          ret = -ENOTCONN;
 +          break;
 +        }
 +
@@ -1740,7 +1740,7 @@ Index: xen-4.6.1/xen/common/v4v.c
 +        v4v_ring_find_info_by_addr (dst_d, dst_addr, src_addr->domain);
 +
 +      if (!ring_info)
-+          ret = -ECONNREFUSED;
++          ret = -ENOTCONN;
 +      else
 +        {
 +          uint32_t len = v4v_iov_count (iovs, niov);
@@ -2076,7 +2076,7 @@ Index: xen-4.6.1/xen/include/public/v4v.h
 ===================================================================
 --- /dev/null
 +++ xen-4.6.1/xen/include/public/v4v.h
-@@ -0,0 +1,492 @@
+@@ -0,0 +1,490 @@
 +#ifndef __V4V_H__
 +#define __V4V_H__
 +
@@ -2095,7 +2095,6 @@ Index: xen-4.6.1/xen/include/public/v4v.h
 +#ifdef __XEN__
 +#include <xen/types.h>
 +#include <public/xen.h>
-+typedef int ssize_t;            //FIXME this needs to be somewhere else
 +#define V4V_VOLATILE
 +#else
 +#if defined(__unix__)
@@ -2109,7 +2108,6 @@ Index: xen-4.6.1/xen/include/public/v4v.h
 +#else
 +#define V4V_VOLATILE volatile
 +#include "xen.h"
-+typedef int ssize_t;
 +#endif
 +#endif
 +
@@ -2345,7 +2343,7 @@ Index: xen-4.6.1/xen/include/public/v4v.h
 +/* the actual length of the message, or -1 if there is nothing to read */
 +
 +
-+static V4V_INLINE ssize_t
++static V4V_INLINE int
 +v4v_copy_out (struct v4v_ring *r, struct v4v_addr *from, uint32_t * protocol,
 +              void *_buf, size_t t, int consume)
 +{
@@ -2356,7 +2354,7 @@ Index: xen-4.6.1/xen/include/public/v4v.h
 +    uint32_t rxp = r->rx_ptr;
 +    uint32_t bte;
 +    uint32_t len;
-+    ssize_t ret;
++    int ret;
 +
 +
 +    if (btr < sizeof (*mh))
@@ -2464,7 +2462,7 @@ Index: xen-4.6.1/xen/include/public/v4v.h
 + * NULL, returns the actual length of the message, or -1 if there is 
 + * nothing to read */
 +
-+static V4V_INLINE ssize_t
++static V4V_INLINE int
 +v4v_copy_out_offset (struct v4v_ring *r, struct v4v_addr *from,
 +                     uint32_t * protocol, void *_buf, size_t t, int consume,
 +                     size_t skip)
@@ -2476,7 +2474,7 @@ Index: xen-4.6.1/xen/include/public/v4v.h
 +    uint32_t rxp = r->rx_ptr;
 +    uint32_t bte;
 +    uint32_t len;
-+    ssize_t ret;
++    int ret;
 +
 +    buf -= skip;
 +

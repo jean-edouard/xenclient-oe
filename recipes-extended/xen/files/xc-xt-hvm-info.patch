@@ -534,14 +534,15 @@ Index: xen-4.6.1/tools/hvm-info/Makefile
 ===================================================================
 --- /dev/null
 +++ xen-4.6.1/tools/hvm-info/Makefile
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,30 @@
 +XEN_ROOT=../..
 +include $(XEN_ROOT)/tools/Rules.mk
 +
 +HVM_INFO_SRC = main.c
 +HVM_INFO_OBJ = $(HVM_INFO_SRC:.c=.o)
 +
-+CFLAGS += -Werror -Wall -I../libxen/include/ -I../libxc -I../include
++CFLAGS += -Werror -Wall
++CFLAGS += $(CFLAGS_libxenctrl)
 +
 +all: hvm-info
 +
@@ -560,7 +561,7 @@ Index: xen-4.6.1/tools/hvm-info/Makefile
 +-include $(DEPS)
 +
 +hvm-info: $(HVM_INFO_OBJ)
-+	$(CC) $(LDFLAGS) $^ -o $@ -lxenctrl -L../libxc
++	$(CC) $(LDFLAGS) $^ $(LDLIBS_libxenctrl) -o $@ 
 +
 +# never delete any intermediate files.
 +.SECONDARY:
