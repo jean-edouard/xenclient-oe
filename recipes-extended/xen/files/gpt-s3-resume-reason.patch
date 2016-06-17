@@ -1,8 +1,8 @@
-diff --git a/xen/arch/x86/hvm/hvm.c b/xen/arch/x86/hvm/hvm.c
-index 0488a2b..fc83a60 100644
---- a/xen/arch/x86/hvm/hvm.c
-+++ b/xen/arch/x86/hvm/hvm.c
-@@ -3795,6 +3795,9 @@ static void hvm_s3_suspend(struct domain *d)
+Index: xen-4.6.1/xen/arch/x86/hvm/hvm.c
+===================================================================
+--- xen-4.6.1.orig/xen/arch/x86/hvm/hvm.c
++++ xen-4.6.1/xen/arch/x86/hvm/hvm.c
+@@ -5477,6 +5477,9 @@ static void hvm_s3_suspend(struct domain
      domain_unlock(d);
  }
  
@@ -12,7 +12,7 @@ index 0488a2b..fc83a60 100644
  static void hvm_s3_resume(struct domain *d)
  {
      if ( test_and_clear_bool(d->arch.hvm_domain.is_s3_suspended) )
-@@ -3803,6 +3806,10 @@ static void hvm_s3_resume(struct domain *d)
+@@ -5485,6 +5488,10 @@ static void hvm_s3_resume(struct domain
  
          for_each_vcpu( d, v )
              hvm_set_guest_tsc(v, 0);
@@ -23,11 +23,11 @@ index 0488a2b..fc83a60 100644
          domain_unpause(d);
      }
  }
-diff --git a/xen/arch/x86/hvm/pmtimer.c b/xen/arch/x86/hvm/pmtimer.c
-index 7197ff6..d9e5699 100644
---- a/xen/arch/x86/hvm/pmtimer.c
-+++ b/xen/arch/x86/hvm/pmtimer.c
-@@ -90,6 +90,25 @@ void hvm_acpi_sleep_button(struct domain *d)
+Index: xen-4.6.1/xen/arch/x86/hvm/pmtimer.c
+===================================================================
+--- xen-4.6.1.orig/xen/arch/x86/hvm/pmtimer.c
++++ xen-4.6.1/xen/arch/x86/hvm/pmtimer.c
+@@ -82,6 +82,25 @@ void hvm_acpi_sleep_button(struct domain
      spin_unlock(&s->lock);
  }
  

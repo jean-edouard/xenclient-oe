@@ -1,7 +1,7 @@
-Index: xen-4.3.4/xen/common/v4v.c
+Index: xen-4.6.1/xen/common/v4v.c
 ===================================================================
---- xen-4.3.4.orig/xen/common/v4v.c
-+++ xen-4.3.4/xen/common/v4v.c
+--- xen-4.6.1.orig/xen/common/v4v.c
++++ xen-4.6.1/xen/common/v4v.c
 @@ -70,6 +70,7 @@ static DEFINE_RWLOCK (v4v_lock); /* L1 *
  /* guest ring_data and the pending list. To take L3 you must */
  /* already have R(L2). W(L2) implies L3 */
@@ -298,10 +298,10 @@ Index: xen-4.3.4/xen/common/v4v.c
      default:
        rc = -ENOSYS;
        break;
-Index: xen-4.3.4/xen/include/public/v4v.h
+Index: xen-4.6.1/xen/include/public/v4v.h
 ===================================================================
---- xen-4.3.4.orig/xen/include/public/v4v.h
-+++ xen-4.3.4/xen/include/public/v4v.h
+--- xen-4.6.1.orig/xen/include/public/v4v.h
++++ xen-4.6.1/xen/include/public/v4v.h
 @@ -74,6 +74,25 @@ typedef struct v4v_addr
  
  DEFINE_XEN_GUEST_HANDLE (v4v_addr_t);
@@ -338,10 +338,10 @@ Index: xen-4.3.4/xen/include/public/v4v.h
  
  #if !defined(__GNUC__)
  #pragma warning(pop)
-Index: xen-4.3.4/xen/include/xen/v4v.h
+Index: xen-4.6.1/xen/include/xen/v4v.h
 ===================================================================
---- xen-4.3.4.orig/xen/include/xen/v4v.h
-+++ xen-4.3.4/xen/include/xen/v4v.h
+--- xen-4.6.1.orig/xen/include/xen/v4v.h
++++ xen-4.6.1/xen/include/xen/v4v.h
 @@ -36,6 +36,13 @@ struct v4v_pending_ent
  };
  
