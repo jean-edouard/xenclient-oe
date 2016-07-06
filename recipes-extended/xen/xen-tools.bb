@@ -33,6 +33,10 @@ FILES_${PN}-libxenstore-dev = "${libdir}/libxenstore.so \
 FILES_${PN}-libxenstore-dbg = "${libdir}/.debug/libxenstore.so*"
 FILES_${PN}-libxenstore-staticdev = "${libdir}/libxenstore.a"
 
+FILES_${PN}-toolstack-headers = "${includedir}/xc_dom.h            \
+                                 ${includedir}/xen/libelf.h        \
+                                 ${includedir}/xen/elfstructs.h"
+
 FILES_${PN}-xenstore-utils = "${bindir}/xenstore-*"
 FILES_${PN}-xenstore-utils-dbg = "${bindir}/.debug/xenstore-*"
 RDEPENDS_${PN}-xenstore-utils += "${PN}-libxenstore"
@@ -107,5 +111,11 @@ do_install() {
 	rm -f ${D}/etc/init.d/xen-watchdog
         install -m 0755 ${WORKDIR}/xenstored.initscript ${D}${sysconfdir}/init.d/xenstored
         install -m 0755 ${WORKDIR}/xenconsoled.initscript ${D}${sysconfdir}/init.d/xenconsoled
+
+ # Export local headers for external toolstack
+        install -d ${D}${includedir}/xen/libelf
+        install -m 0755 ${S}/tools/libxc/include/xc_dom.h ${D}${includedir}/xc_dom.h
+        install -m 0755 ${S}/tools/include/xen/libelf/libelf.h ${D}${includedir}/xen/libelf/libelf.h
+        install -m 0755 ${S}/tools/include/xen/libelf/elfstructs.h ${D}${includedir}/xen/libelf/elfstructs.h
 }
 
