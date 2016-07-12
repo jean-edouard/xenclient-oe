@@ -13,6 +13,7 @@ SRC_URI = "${XEN_SRC_URI};name=source \
     file://disable-xen-root-check.patch \
     file://blktap-resume-fix.patch;patch=1 \
     file://xentrace-format-handle-zero-tsc.patch;patch=1 \
+    file://xsm-add-corespersocket.patch \
     file://hvm-pm-hibernate-s-state.patch;patch=1 \
     file://prune-vga-acpi-dev.patch;patch=1 \
     file://xen-libhvm.patch;patch=1 \
