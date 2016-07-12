@@ -22,42 +22,46 @@ Index: xen-4.6.1/xen/arch/x86/x86_64/compat/entry.S
 ===================================================================
 --- xen-4.6.1.orig/xen/arch/x86/x86_64/compat/entry.S
 +++ xen-4.6.1/xen/arch/x86/x86_64/compat/entry.S
-@@ -432,6 +432,7 @@ ENTRY(compat_hypercall_table)
+@@ -430,7 +430,7 @@ ENTRY(compat_hypercall_table)
+         .quad do_domctl
+         .quad compat_kexec_op
          .quad do_tmem_op
-         .quad do_ni_hypercall           /* reserved for XenClient */
+-        .quad do_ni_hypercall           /* reserved for XenClient */
++        .quad do_v4v_op           /* reserved for XenClient - used for v4v*/
          .quad do_xenpmu_op              /* 40 */
-+        .quad do_v4v_op
          .rept __HYPERVISOR_arch_0-((.-compat_hypercall_table)/8)
          .quad compat_ni_hypercall
-         .endr
-@@ -483,6 +484,7 @@ ENTRY(compat_hypercall_args_table)
+@@ -481,7 +481,7 @@ ENTRY(compat_hypercall_args_table)
+         .byte 1 /* do_domctl                */
+         .byte 2 /* compat_kexec_op          */
          .byte 1 /* do_tmem_op               */
-         .byte 0 /* reserved for XenClient   */
+-        .byte 0 /* reserved for XenClient   */
++        .byte 6 /* reserved for XenClient - used for v4v */
          .byte 2 /* do_xenpmu_op             */  /* 40 */
-+        .byte 6 /* do_v4v_op		    */
          .rept __HYPERVISOR_arch_0-(.-compat_hypercall_args_table)
          .byte 0 /* compat_ni_hypercall      */
-         .endr
 Index: xen-4.6.1/xen/arch/x86/x86_64/entry.S
 ===================================================================
 --- xen-4.6.1.orig/xen/arch/x86/x86_64/entry.S
 +++ xen-4.6.1/xen/arch/x86/x86_64/entry.S
-@@ -765,6 +765,7 @@ ENTRY(hypercall_table)
+@@ -763,7 +763,7 @@ ENTRY(hypercall_table)
+         .quad do_domctl
+         .quad do_kexec_op
          .quad do_tmem_op
-         .quad do_ni_hypercall       /* reserved for XenClient */
+-        .quad do_ni_hypercall       /* reserved for XenClient */
++        .quad do_v4v_op       /* reserved for XenClient - used for v4v*/
          .quad do_xenpmu_op          /* 40 */
-+        .quad do_v4v_op
          .rept __HYPERVISOR_arch_0-((.-hypercall_table)/8)
          .quad do_ni_hypercall
-         .endr
-@@ -816,6 +817,7 @@ ENTRY(hypercall_args_table)
+@@ -814,7 +814,7 @@ ENTRY(hypercall_args_table)
+         .byte 1 /* do_domctl            */
+         .byte 2 /* do_kexec             */
          .byte 1 /* do_tmem_op           */
-         .byte 0 /* reserved for XenClient */
+-        .byte 0 /* reserved for XenClient */
++        .byte 6 /* reserved for XenClient - used for v4v */
          .byte 2 /* do_xenpmu_op         */  /* 40 */
-+        .byte 6 /* do_v4v_op		*/
          .rept __HYPERVISOR_arch_0-(.-hypercall_args_table)
          .byte 0 /* do_ni_hypercall      */
-         .endr
 Index: xen-4.6.1/xen/common/Makefile
 ===================================================================
 --- xen-4.6.1.orig/xen/common/Makefile
@@ -2751,7 +2755,7 @@ Index: xen-4.6.1/xen/xsm/flask/hooks.c
 ===================================================================
 --- xen-4.6.1.orig/xen/xsm/flask/hooks.c
 +++ xen-4.6.1/xen/xsm/flask/hooks.c
-@@ -1618,6 +1618,11 @@ static int flask_pmu_op (struct domain *
+@@ -1621,6 +1621,11 @@ static int flask_pmu_op (struct domain *
  }
  #endif /* CONFIG_X86 */
  
@@ -2763,7 +2767,7 @@ Index: xen-4.6.1/xen/xsm/flask/hooks.c
  long do_flask_op(XEN_GUEST_HANDLE_PARAM(xsm_op_t) u_flask_op);
  int compat_flask_op(XEN_GUEST_HANDLE_PARAM(xsm_op_t) u_flask_op);
  
-@@ -1756,6 +1761,7 @@ static struct xsm_operations flask_ops =
+@@ -1759,6 +1764,7 @@ static struct xsm_operations flask_ops =
      .ioport_mapping = flask_ioport_mapping,
      .pmu_op = flask_pmu_op,
  #endif
@@ -2775,7 +2779,7 @@ Index: xen-4.6.1/xen/xsm/flask/policy/access_vectors
 ===================================================================
 --- xen-4.6.1.orig/xen/xsm/flask/policy/access_vectors
 +++ xen-4.6.1/xen/xsm/flask/policy/access_vectors
-@@ -493,3 +493,8 @@ class security
+@@ -495,3 +495,8 @@ class security
  # remove ocontext label definitions for resources
      del_ocontext
  }
