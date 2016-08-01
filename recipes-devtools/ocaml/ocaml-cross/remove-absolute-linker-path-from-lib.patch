@@ -50,10 +50,10 @@ Index: git/tools/ocamlmklib.mlp
        rpath := chop_prefix s "-R" :: !rpath
      else if s = "-Wl,-rpath" then
 @@ -136,6 +140,7 @@
-   -ccopt <opt>   C option passed to ocamlc -a or ocamlopt -a only
-   -custom        disable dynamic loading
-   -dllpath <dir> Add <dir> to the run-time search path for DLLs
-+  -elfmode       Do not add link-time search path to run-time path
-   -F<dir>        Specify a framework directory (MacOSX)
-   -framework <name>    Use framework <name> (MacOSX)
-   -help          Print this help message and exit
+   -ccopt <opt>   C option passed to ocamlc -a or ocamlopt -a only\n\
+   -custom        disable dynamic loading\n\
+   -dllpath <dir> Add <dir> to the run-time search path for DLLs\n\
++  -elfmode       Do not add link-time search path to run-time path\n\
+   -F<dir>        Specify a framework directory (MacOSX)\n\
+   -framework <name>    Use framework <name> (MacOSX)\n\
+   -help          Print this help message and exit\n\

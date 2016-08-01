@@ -2,14 +2,11 @@ SECTION = "devel"
 LICENSE = "QPL-1.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=524443efef4a3e092cca058d99996c88"
 
-PR = "r2"
+SRCREV = "efe1b09d2b67d875a417d7ba718d82d6715791b9"
 
-PV = "0+git${SRCPV}"
-
-SRCREV = "${AUTOREV}"
-SRC_URI = "git://${OPENXT_GIT_MIRROR}/ocaml.git;protocol=${OPENXT_GIT_PROTOCOL};branch=${OPENXT_BRANCH} \
+SRC_URI = "git://github.com/ocaml/ocaml.git;protocol=git;branch=contracts;branch=3.12 \
            file://0007-Fix-ocamlopt-w.r.t.-binutils-2.21.patch;patch=1 \
-	   file://config.patch \
+           file://config.patch \
            file://remove-absolute-linker-path-from-lib.patch \
 "
 
