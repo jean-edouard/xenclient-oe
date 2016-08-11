@@ -73,11 +73,16 @@ post_rootfs_shell_commands() {
 	# Create mountpoint for boot/system
 	mkdir -p ${IMAGE_ROOTFS}/boot/system ;
 
+	mkdir -p ${IMAGE_ROOTFS}/var/lib/xen ;
+	mkdir -p ${IMAGE_ROOTFS}/var/log/xen ;
+	mkdir -p ${IMAGE_ROOTFS}/etc/xen ;
+	touch ${IMAGE_ROOTFS}/etc/xen/xl.conf ;
+
 	# Remove unwanted packages specified above
 	opkg -f ${IPKGCONF_TARGET} -o ${IMAGE_ROOTFS} ${OPKG_ARGS} -force-depends remove ${PACKAGE_REMOVE};
 
 	# Remove network modules except netfront
-	for x in `find ${IMAGE_ROOTFS}/lib/modules -name *.ko | grep drivers/net | grep -v xen-netfront`; do
+	for x in `find ${IMAGE_ROOTFS}/lib/modules -name *.ko | grep drivers/net | grep -v xen-netfront | grep -v e1000e | grep -v xen-netback`; do
 		pkg="kernel-module-`basename $x .ko | sed s/_/-/g`";
 		opkg ${IPKG_ARGS} -force-depends remove $pkg;
 	done;
