@@ -1,0 +1,139 @@
+Index: xen-4.6.1/tools/libxl/libxl_dm.c
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl_dm.c
++++ xen-4.6.1/tools/libxl/libxl_dm.c
+@@ -1372,7 +1372,6 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+     char **args;
+     struct xs_permissions perm[2];
+     xs_transaction_t t;
+-    libxl_device_disk disk_stub;
+ 
+     /* convenience aliases */
+     libxl_domain_config *const dm_config = &sdss->dm_config;
+@@ -1461,20 +1460,15 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+         stubdom_state->pv_ramdisk.path = "";
+         break;
+     case LIBXL_STUBDOMAIN_VERSION_LINUX:
+-        libxl_device_disk_init(&disk_stub);
+-        disk_stub.readwrite = 0;
+-        disk_stub.format = LIBXL_DISK_FORMAT_RAW;
+-        disk_stub.is_cdrom = 0;
+-        disk_stub.vdev = "xvdz";
+-        disk_stub.pdev_path = libxl__abs_path(gc, "stubdom-disk.img",
+-                                              libxl__xenfirmwaredir_path());
+-        ret = libxl__device_disk_setdefault(gc, &disk_stub);
+-        if (ret) goto out;
+         stubdom_state->pv_kernel.path
+-            = libxl__abs_path(gc, "vmlinuz-stubdom", libxl__xenfirmwaredir_path());
++            = libxl__abs_path(gc, "stubdomain-bzImage",
++                              libxl__xenfirmwaredir_path());
+         stubdom_state->pv_cmdline
+-            = "debug console=hvc0 root=/dev/xvdz ro init=/init";
+-        stubdom_state->pv_ramdisk.path = "";
++            = libxl__sprintf(gc, "-xen-domid %d init=/init console=hvc0 ro -m %llu",
++                             guest_domid,
++                             (dm_config->b_info.max_memkb/1024));
++        stubdom_state->pv_ramdisk.path = libxl__abs_path(gc, "stubdomain-initramfs",
++                                                         libxl__xenfirmwaredir_path());
+         break;
+     default:
+         abort();
+@@ -1514,7 +1508,7 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+                    "%d", guest_domid);
+     if (guest_config->b_info.stubdomain_version == LIBXL_STUBDOMAIN_VERSION_LINUX) {
+         /* qemu-xen is used as a dm in the stubdomain, so we set the bios
+-         * accroding to this */
++         * according to this */
+         libxl__xs_write(gc, XBT_NULL,
+                         libxl__sprintf(gc, "%s/hvmloader/bios",
+                                        libxl__xs_get_dompath(gc, guest_domid)),
+@@ -1549,10 +1543,10 @@ retry_transaction:
+ 
+     libxl__multidev_begin(ao, &sdss->multidev);
+     sdss->multidev.callback = spawn_stub_launch_dm;
+-    if (guest_config->b_info.stubdomain_version == LIBXL_STUBDOMAIN_VERSION_LINUX) {
+-        libxl__ao_device *aodev = libxl__multidev_prepare(&sdss->multidev);
+-        libxl__device_disk_add(egc, dm_domid, &disk_stub, aodev);
+-    }
++    //    if (guest_config->b_info.stubdomain_version == LIBXL_STUBDOMAIN_VERSION_LINUX) {
++    //    libxl__ao_device *aodev = libxl__multidev_prepare(&sdss->multidev);
++    //    libxl__device_disk_add(egc, dm_domid, &disk_stub, aodev);
++    //}
+     libxl__add_disks(egc, ao, dm_domid, dm_config, &sdss->multidev);
+     libxl__multidev_prepared(egc, &sdss->multidev, 0);
+ 
+@@ -1568,7 +1562,6 @@ static void spawn_stub_launch_dm(libxl__
+ {
+     libxl__stub_dm_spawn_state *sdss = CONTAINER_OF(multidev, *sdss, multidev);
+     STATE_AO_GC(sdss->dm.spawn.ao);
+-    libxl_ctx *ctx = libxl__gc_owner(gc);
+     int i, num_console = STUBDOM_SPECIAL_CONSOLES;
+     libxl__device_console *console;
+ 
+@@ -1613,35 +1606,27 @@ static void spawn_stub_launch_dm(libxl__
+     for (i = 0; i < num_console; i++) {
+         libxl__device device;
+         console[i].devid = i;
+-        console[i].consback = LIBXL__CONSOLE_BACKEND_IOEMU;
++        console[i].consback = LIBXL__CONSOLE_BACKEND_XENCONSOLED;
+         /* STUBDOM_CONSOLE_LOGGING (console 0) is for minios logging
+          * STUBDOM_CONSOLE_SAVE (console 1) is for writing the save file
+          * STUBDOM_CONSOLE_RESTORE (console 2) is for reading the save file
+          */
+         switch (i) {
+-            char *filename;
+-            char *name;
+             case STUBDOM_CONSOLE_LOGGING:
+-                name = libxl__sprintf(gc, "qemu-dm-%s",
+-                                      libxl_domid_to_name(ctx, guest_domid));
+-                ret = libxl_create_logfile(ctx, name, &filename);
+-                if (ret) goto out;
+-                console[i].output = libxl__sprintf(gc, "file:%s", filename);
+-                free(filename);
++                console[i].output = "pty";
+                 break;
+             case STUBDOM_CONSOLE_SAVE:
+-                if (guest_config->b_info.stubdomain_version
+-                      == LIBXL_STUBDOMAIN_VERSION_MINIOS) {
++                if (guest_config->b_info.stubdomain_version == LIBXL_STUBDOMAIN_VERSION_MINIOS) {
+                     console[i].output = libxl__sprintf(gc, "file:%s",
+-                        libxl__device_model_savefile(gc, guest_domid));
++                                                       libxl__device_model_savefile(gc, guest_domid));
+                     break;
+                 }
+             case STUBDOM_CONSOLE_RESTORE:
+-                if (guest_config->b_info.stubdomain_version
+-                      == LIBXL_STUBDOMAIN_VERSION_MINIOS) {
++                if (guest_config->b_info.stubdomain_version == LIBXL_STUBDOMAIN_VERSION_MINIOS) {
+                     if (d_state->saved_state)
+                         console[i].output =
+-                            libxl__sprintf(gc, "pipe:%s", d_state->saved_state);
++                            libxl__sprintf(gc, "pipe:%s",
++                                           d_state->saved_state);
+                     break;
+                 }
+             default:
+@@ -1661,6 +1646,14 @@ static void spawn_stub_launch_dm(libxl__
+     sdss->pvqemu.build_state = &sdss->dm_state;
+     sdss->pvqemu.callback = spawn_stubdom_pvqemu_cb;
+ 
++    if (libxl_defbool_val(guest_config->b_info.device_model_stubdomain)) {
++        LOGE(ERROR, "ABORTING THIS IS GOOD");
++        spawn_stubdom_pvqemu_cb(egc, &sdss->pvqemu, 0);
++
++        return;
++    }
++    LOGE(ERROR, "INVOKING QEMU IN DOM0. BETTER NOT RUN A STUBBY");
++
+     libxl__spawn_local_dm(egc, &sdss->pvqemu);
+ 
+     return;
+@@ -1711,7 +1704,7 @@ static void stub_dm_watch_event(libxl__e
+         if (dm_domid) {
+             sdss->dis.ao = sdss->dm.spawn.ao;
+             sdss->dis.domid = dm_domid;
+-            sdss->dis.callback = spaw_stubdom_pvqemu_destroy_cb;
++            //sdss->dis.callback = spawn_stubdom_pvqemu_destroy_cb;
+             libxl__destroy_domid(egc, &sdss->dis);
+         }
+        return;
