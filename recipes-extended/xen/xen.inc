@@ -57,6 +57,10 @@ SRC_URI = "${XEN_SRC_URI};name=source \
     file://openxt-xen-xsmv4vuse.patch \
     file://xsa-154-x86-inconsistent-cachability-flags-on-guest-mappings.patch \
     file://xsa-182-x86-privilege-escalation-in-pv-guests.patch \
+    file://eric4.patch \
+    file://eric5.patch \
+    file://eric7.patch \
+    file://eric_fixes.patch \
 "
 
 SRC_URI[source.md5sum] := "${XEN_SRC_MD5SUM}"
