@@ -65,18 +65,6 @@ SRC_URI += "file://xsa-126-unmediated-pci-command-register-access-in-qemu.patch;
             file://0034-maintain-time-offset.patch;striplevel=1 \
             file://0035-add-acpi-wakeup.patch;striplevel=1 \
             file://0036-qmp-v4v-char-driver.patch;striplevel=1 \
-            file://xsa-126-unmediated-pci-command-register-access-in-qemu.patch;patch=1 \
-            file://xsa-128-potential-unintended-writes-to-host-msi-message-data-field-via-qemu.patch;patch=1 \
-            file://xsa-129-pci-msi-mask-bits-inadvertently-exposed-to-guests.patch;patch=1 \
-            file://xsa-130-guest-triggerable-qemu-msi-x-pass-through-error-messages.patch;patch=1 \
-            file://xsa-131-unmediated-pci-register-access-in-qemu.patch;patch=1 \
-            file://xsa-133-privilege-escalation-via-emulated-floppy-disk-drive.patch;patch=1 \
-            file://xsa-135-heap-overflow-in-qemu-pcnet-controller.patch;patch=1 \
-            file://xsa-138-qemu-heap-overflow-flaw-while-processing-certain-atapi-commands.patch;patch=1 \
-            file://xsa-139-use-after-free-in-qemu-xen-block-unplug-protocol.patch;patch=1 \
-            file://xsa-140-qemu-leak-of-uninitialized-heap-memory-in-rtl8139-device-model.patch;patch=1 \
-            file://xsa-155-paravirtualized-drivers-incautious-about-shared-memory-contents.patch;patch=1 \
-            file://xsa-162-heap-buffer-overflow-vulnerability-in-pcnet-emulator.patch;patch=1 \
             "
 
 SRC_URI[md5sum] = "78f13b774814b6b7ebcaf4f9b9204318"
