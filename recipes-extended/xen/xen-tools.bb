@@ -85,6 +85,8 @@ do_compile() {
         oe_runmake -C tools subdir-all-xenstat
         oe_runmake -C tools subdir-all-hvm-info
         oe_runmake -C tools subdir-all-xen-libhvm
+        oe_runmake -C tools subdir-all-blktap2
+        oe_runmake -C tools subdir-all-libxl
 }
 
 do_install() {
@@ -100,6 +102,7 @@ do_install() {
         oe_runmake DESTDIR=${D} -C tools subdir-install-xenstat
         oe_runmake DESTDIR=${D} -C tools subdir-install-hvm-info
         oe_runmake DESTDIR=${D} -C tools subdir-install-xen-libhvm
+        oe_runmake DESTDIR=${D} -C tools subdir-install-libxl
 
 # Should not be necessary anymore
         rm -rf ${D}/etc/udev
