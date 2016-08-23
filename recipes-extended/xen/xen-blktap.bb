@@ -2,6 +2,8 @@ require xen.inc
 
 inherit pkgconfig pythonnative
 
+SRC_URI += " file://blktap2-vhd-icbinn-support.patch "
+
 DEPENDS += "util-linux xen-tools openssl libaio libicbinn-resolved"
 
 EXTRA_OEMAKE += "CROSS_SYS_ROOT=${STAGING_DIR_HOST} CROSS_COMPILE=${HOST_PREFIX}"
