@@ -57,6 +57,11 @@ SRC_URI = "${XEN_SRC_URI};name=source \
     file://openxt-xen-xsmv4vuse.patch \
     file://xsa-154-x86-inconsistent-cachability-flags-on-guest-mappings.patch \
     file://xsa-182-x86-privilege-escalation-in-pv-guests.patch \
+    file://libxl-Add-stubdomain-version-tools-domain-build-info.patch \
+    file://libxl-Build-the-domain-with-a-Linux-based-stubdomain.patch \
+    file://libxl-Handle-Linux-stubdomain-specific-QEMUoptions.patch \
+    file://libxl-Wait-for-QEMU-startup-in-stubdomain.patch \
+    file://libxl-fix-linux-stubdom-compilation-issues.patch \
 "
 
 SRC_URI[source.md5sum] := "${XEN_SRC_MD5SUM}"
