@@ -92,14 +92,10 @@ case "$AGENT" in
             echo "Start dmagent..."
             exec /usr/bin/dm-agent -q -n -t $DOMID
         else
-	    QEMU_CMDLINE=`cat /proc/cmdline | cut -d' ' -f6- `
-	    echo "QEMU_CMD_LINE after initial cut: ${QEMU_CMDLINE}"
-	    #QEMU_CMDLINE=`cat /proc/cmdline | cut -d' ' -f3-`
-            DOMID=`echo $QEMU_CMDLINE | cut -d' ' -f2 `
-            echo "Start qemu-dm-wrapper..."
-            #exec /usr/bin/qemu-dm-wrapper $DOMID -stubdom -name qemu-$DOMID $QEMU_CMDLINE
-	    echo "Invoking qemu wrapper with QEMU_CMDLINE = " ${QEMU_CMDLINE} " and domid = " ${DOMID}
-	    exec /usr/bin/qemu-dm-wrapper $DOMID $QEMU_CMDLINE
+            DOMID=`cat /proc/cmdline | cut -d' ' -f2 `
+	    QEMU_CMDLINE=`cat /proc/cmdline`
+	    echo "Invoking qemu wrapper with QEMU_CMDLINE = ${QEMU_CMDLINE}"
+	    exec /usr/bin/qemu-dm-wrapper ${DOMID} ${QEMU_CMDLINE}
         fi
         ;;
 esac

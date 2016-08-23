@@ -2,6 +2,93 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl_dm.c
 +++ xen-4.6.1/tools/libxl/libxl_dm.c
+@@ -458,14 +458,14 @@ static int libxl__build_device_model_arg
+         if (libxl_defbool_val(vnc->findunused)) {
+             flexarray_append(dm_args, "-vncunused");
+         }
+-    } else
++    } //else
+         /*
+          * VNC is not enabled by default by qemu-xen-traditional,
+          * however passing -vnc none causes SDL to not be
+          * (unexpectedly) enabled by default. This is overridden by
+          * explicitly passing -sdl below as required.
+          */
+-        flexarray_append_pair(dm_args, "-vnc", "none");
++        //        flexarray_append_pair(dm_args, "-vnc", "none");
+ 
+     if (sdl) {
+         flexarray_append(dm_args, "-sdl");
+@@ -525,7 +525,7 @@ static int libxl__build_device_model_arg
+ 
+         switch (b_info->u.hvm.vga.kind) {
+         case LIBXL_VGA_INTERFACE_TYPE_STD:
+-            flexarray_append(dm_args, "-std-vga");
++            flexarray_append_pair(dm_args, "-vga", " std");
+             break;
+         case LIBXL_VGA_INTERFACE_TYPE_CIRRUS:
+             break;
+@@ -822,17 +822,16 @@ static int libxl__build_device_model_arg
+         }
+ 
+         flexarray_append(dm_args, vncarg);
+-    } else
++    } //else
+         /*
+          * Ensure that by default no vnc server is created.
+          */
+-        flexarray_append_pair(dm_args, "-vnc", "none");
++        //flexarray_append_pair(dm_args, "-vnc", "none");
+ 
+     /*
+-     * Ensure that by default no display backend is created. Further
+-     * options given below might then enable more.
++     * surfman is our default backend
+      */
+-    flexarray_append_pair(dm_args, "-display", "none");
++    flexarray_append_pair(dm_args, "-display", "surfman");
+ 
+     if (sdl && !is_stubdom) {
+         flexarray_append(dm_args, "-sdl");
+@@ -910,9 +909,9 @@ static int libxl__build_device_model_arg
+ 
+         switch (b_info->u.hvm.vga.kind) {
+         case LIBXL_VGA_INTERFACE_TYPE_STD:
+-            flexarray_append_pair(dm_args, "-device",
+-                GCSPRINTF("VGA,vgamem_mb=%d",
+-                libxl__sizekb_to_mb(b_info->video_memkb)));
++            //flexarray_append_pair(dm_args, "-device",
++            //    GCSPRINTF("VGA,vgamem_mb=%d",
++            //    libxl__sizekb_to_mb(b_info->video_memkb)));
+             break;
+         case LIBXL_VGA_INTERFACE_TYPE_CIRRUS:
+             flexarray_append_pair(dm_args, "-device",
+@@ -931,7 +930,7 @@ static int libxl__build_device_model_arg
+ 
+         if (b_info->u.hvm.boot) {
+             flexarray_vappend(dm_args, "-boot",
+-                    libxl__sprintf(gc, "order=%s", b_info->u.hvm.boot), NULL);
++                    libxl__sprintf(gc, "%s", b_info->u.hvm.boot), NULL);
+         }
+         if (libxl_defbool_val(b_info->u.hvm.usb)
+             || b_info->u.hvm.usbdevice
+@@ -1175,7 +1174,7 @@ static int libxl__build_device_model_arg
+                     if (b_info->stubdomain_version == LIBXL_STUBDOMAIN_VERSION_LINUX)
+                         drive = libxl__sprintf
+                                 (gc, "file=%s,if=ide,index=%d,media=disk,cache=writeback,format=%s",
+-                                 "/dev/xvda", disk, "host_device");
++                                 "/dev/xvda", disk, "raw");
+                     else
+                         drive = libxl__sprintf
+                                 (gc, "file=%s,if=ide,index=%d,media=disk,format=%s,cache=writeback",
+@@ -1187,6 +1186,7 @@ static int libxl__build_device_model_arg
+ 
+             flexarray_append(dm_args, "-drive");
+             flexarray_append(dm_args, drive);
++
+         }
+ 
+         switch (b_info->u.hvm.vendor_device) {
 @@ -1372,7 +1372,6 @@ void libxl__spawn_stub_dm(libxl__egc *eg
      char **args;
      struct xs_permissions perm[2];
@@ -10,7 +97,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
  
      /* convenience aliases */
      libxl_domain_config *const dm_config = &sdss->dm_config;
-@@ -1461,20 +1460,15 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+@@ -1461,43 +1460,93 @@ void libxl__spawn_stub_dm(libxl__egc *eg
          stubdom_state->pv_ramdisk.path = "";
          break;
      case LIBXL_STUBDOMAIN_VERSION_LINUX:
@@ -25,20 +112,107 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
 -        if (ret) goto out;
          stubdom_state->pv_kernel.path
 -            = libxl__abs_path(gc, "vmlinuz-stubdom", libxl__xenfirmwaredir_path());
-+            = libxl__abs_path(gc, "stubdomain-bzImage",
-+                              libxl__xenfirmwaredir_path());
-         stubdom_state->pv_cmdline
+-        stubdom_state->pv_cmdline
 -            = "debug console=hvc0 root=/dev/xvdz ro init=/init";
 -        stubdom_state->pv_ramdisk.path = "";
-+            = libxl__sprintf(gc, "-xen-domid %d init=/init console=hvc0 ro -m %llu",
-+                             guest_domid,
-+                             (dm_config->b_info.max_memkb/1024));
++            = libxl__abs_path(gc, "stubdomain-bzImage",
++                              libxl__xenfirmwaredir_path());
++
 +        stubdom_state->pv_ramdisk.path = libxl__abs_path(gc, "stubdomain-initramfs",
 +                                                         libxl__xenfirmwaredir_path());
          break;
      default:
          abort();
-@@ -1514,7 +1508,7 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+     }
+ 
++    ret = libxl__build_device_model_args(gc, "stubdom-dm", guest_domid,
++                                         guest_config, &args, NULL,
++                                         d_state, NULL);
++    if (ret) {
++        ret = ERROR_FAIL;
++        goto out;
++    }
++
++    /* We have collected the device model arguments.
++     * If we run a stubby, we must adjust the pv kernel cmdline BEFORE making the domain.
++     */
++    if (guest_config->b_info.stubdomain_version == LIBXL_STUBDOMAIN_VERSION_LINUX) {
++        int dmargs_size;
++        int toggle;
++        char *dmargs;
++        char **arg;
++
++        dmargs_size = 0;
++        toggle = 0;
++        for (arg = args; *arg; arg++) {
++            if (toggle) {
++                dmargs_size = dmargs_size + strlen("qemu-1.0") + 1;
++                toggle = 0;
++            }
++            else
++                dmargs_size = dmargs_size + strlen(*arg) + 1;
++
++            if (strcmp(*arg, "-name")==0)
++                toggle = 1;
++        }
++        dmargs_size += strlen("-qmp v4v")+1;
++        dmargs_size += strlen("-device xenmou");
++        dmargs_size += strlen("-xen-acpi-pm");
++        dmargs_size++;
++        dmargs = (char *) libxl__malloc(gc, dmargs_size);
++
++        dmargs[0] = '\0';
++        for (arg = args; *arg; arg++) {
++            /* Omit "stubdom-dm" */
++            if (strcmp(*arg, "stubdom-dm")!=0) {
++                strcat(dmargs, " ");
++                if (toggle) {
++                    strcat(dmargs, libxl__sprintf(gc, "qemu-%d.0", guest_domid));
++                    toggle = 0;
++                }
++                else
++                    strcat(dmargs, *arg);
++            }
++
++            if (strcmp(*arg, "-name")==0)
++                toggle = 1;
++        }
++        strcat(dmargs, " ");
++        strcat(dmargs, "-qmp v4v");
++
++        strcat(dmargs, " ");
++        strcat(dmargs, "-device xenmou");
++
++        strcat(dmargs, " ");
++        strcat(dmargs, "-xen-acpi-pm");
++
++        stubdom_state->pv_cmdline
++            = libxl__sprintf(gc, "%s", dmargs);
++    }
++
+     /* fixme: this function can leak the stubdom if it fails */
+     ret = libxl__domain_make(gc, dm_config, &sdss->pvqemu.guest_domid,
+                              &stubdom_state->config);
+     if (ret)
+         goto out;
++
+     uint32_t dm_domid = sdss->pvqemu.guest_domid;
+     ret = libxl__domain_build(gc, dm_config, dm_domid, stubdom_state);
+     if (ret)
+         goto out;
+ 
+-    ret = libxl__build_device_model_args(gc, "stubdom-dm", guest_domid,
+-                                         guest_config, &args, NULL,
+-                                         d_state, NULL);
+-    if (ret) {
+-        ret = ERROR_FAIL;
+-        goto out;
+-    }
+-
+     libxl__store_libxl_entry(gc, guest_domid, "dm-version",
+         libxl_device_model_version_to_string(dm_config->b_info.device_model_version));
+     libxl__store_libxl_entry(gc, dm_domid, "stubdom-version",
+@@ -1514,12 +1563,27 @@ void libxl__spawn_stub_dm(libxl__egc *eg
                     "%d", guest_domid);
      if (guest_config->b_info.stubdomain_version == LIBXL_STUBDOMAIN_VERSION_LINUX) {
          /* qemu-xen is used as a dm in the stubdomain, so we set the bios
@@ -47,7 +221,27 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
          libxl__xs_write(gc, XBT_NULL,
                          libxl__sprintf(gc, "%s/hvmloader/bios",
                                         libxl__xs_get_dompath(gc, guest_domid)),
-@@ -1549,10 +1543,10 @@ retry_transaction:
+                         "%s",
+                         libxl_bios_type_to_string(LIBXL_BIOS_TYPE_SEABIOS));
++        /* We have to add the device models extended power management type to enable acpi
++         * in the stubby */
++        libxl__xs_write(gc, XBT_NULL,
++                        libxl__sprintf(gc, "/local/domain/0/device-model/%d/xen_extended_power_mgmt",
++                                       guest_domid),
++                        "2");
++        /* We have to add seabios-legacy-roms in the guests XS node */
++        libxl__xs_write(gc, XBT_NULL,
++                        libxl__sprintf(gc, "%s/hvmloader/seabios-legacy-load-roms",
++                                       libxl__xs_get_dompath(gc, guest_domid)),
++                        "1");
++        /* XL needs confirmation that the toolstack runs in dom0. This can be moved somewhere more
++         * appropriate
++         */
++        libxl__xs_write(gc, XBT_NULL, "/local/domain/0/domid", "0");
+     }
+     ret = xc_domain_set_target(ctx->xch, dm_domid, guest_domid);
+     if (ret<0) {
+@@ -1549,10 +1613,10 @@ retry_transaction:
  
      libxl__multidev_begin(ao, &sdss->multidev);
      sdss->multidev.callback = spawn_stub_launch_dm;
@@ -62,7 +256,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      libxl__add_disks(egc, ao, dm_domid, dm_config, &sdss->multidev);
      libxl__multidev_prepared(egc, &sdss->multidev, 0);
  
-@@ -1568,7 +1562,6 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1568,7 +1632,6 @@ static void spawn_stub_launch_dm(libxl__
  {
      libxl__stub_dm_spawn_state *sdss = CONTAINER_OF(multidev, *sdss, multidev);
      STATE_AO_GC(sdss->dm.spawn.ao);
@@ -70,7 +264,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      int i, num_console = STUBDOM_SPECIAL_CONSOLES;
      libxl__device_console *console;
  
-@@ -1613,35 +1606,27 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1613,35 +1676,27 @@ static void spawn_stub_launch_dm(libxl__
      for (i = 0; i < num_console; i++) {
          libxl__device device;
          console[i].devid = i;
@@ -113,22 +307,19 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
                      break;
                  }
              default:
-@@ -1661,6 +1646,14 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1661,6 +1716,11 @@ static void spawn_stub_launch_dm(libxl__
      sdss->pvqemu.build_state = &sdss->dm_state;
      sdss->pvqemu.callback = spawn_stubdom_pvqemu_cb;
  
 +    if (libxl_defbool_val(guest_config->b_info.device_model_stubdomain)) {
-+        LOGE(ERROR, "ABORTING THIS IS GOOD");
 +        spawn_stubdom_pvqemu_cb(egc, &sdss->pvqemu, 0);
-+
 +        return;
 +    }
-+    LOGE(ERROR, "INVOKING QEMU IN DOM0. BETTER NOT RUN A STUBBY");
 +
      libxl__spawn_local_dm(egc, &sdss->pvqemu);
  
      return;
-@@ -1711,7 +1704,7 @@ static void stub_dm_watch_event(libxl__e
+@@ -1711,7 +1771,7 @@ static void stub_dm_watch_event(libxl__e
          if (dm_domid) {
              sdss->dis.ao = sdss->dm.spawn.ao;
              sdss->dis.domid = dm_domid;
@@ -137,3 +328,55 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
              libxl__destroy_domid(egc, &sdss->dis);
          }
         return;
+Index: xen-4.6.1/tools/libxl/libxl.c
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl.c
++++ xen-4.6.1/tools/libxl/libxl.c
+@@ -153,7 +153,7 @@ int libxl_ctx_free(libxl_ctx *ctx)
+ {
+     if (!ctx) return 0;
+ 
+-    int i;
++    //int i;
+     GC_INIT(ctx);
+ 
+     CTX_LOCK;
+@@ -170,18 +170,21 @@ int libxl_ctx_free(libxl_ctx *ctx)
+         libxl__evdisable_disk_eject(gc, eject);
+ 
+     libxl_childproc_setmode(CTX,0,0);
++    /*
+     for (i = 0; i < ctx->watch_nslots; i++)
+         assert(!libxl__watch_slot_contents(gc, i));
+     assert(!libxl__ev_fd_isregistered(&ctx->watch_efd));
+     assert(!libxl__ev_fd_isregistered(&ctx->evtchn_efd));
+-    assert(!libxl__ev_fd_isregistered(&ctx->sigchld_selfpipe_efd));
++    assert(!libxl__ev_fd_isregistered(&ctx->sigchld_selfpipe_efd)); */
+ 
+     /* Now there should be no more events requested from the application: */
+ 
++    /*
+     assert(LIBXL_LIST_EMPTY(&ctx->efds));
+     assert(LIBXL_TAILQ_EMPTY(&ctx->etimes));
+     assert(LIBXL_LIST_EMPTY(&ctx->evtchns_waiting));
+     assert(LIBXL_LIST_EMPTY(&ctx->aos_inprogress));
++    */
+ 
+     if (ctx->xch) xc_interface_close(ctx->xch);
+     libxl_version_info_dispose(&ctx->version_info);
+@@ -1043,6 +1046,7 @@ int libxl_domain_unpause(libxl_ctx *ctx,
+         goto out;
+     }
+ 
++#if 0
+     if (type == LIBXL_DOMAIN_TYPE_HVM) {
+         rc = libxl__domain_resume_device_model(gc, domid);
+         if (rc < 0) {
+@@ -1051,6 +1055,7 @@ int libxl_domain_unpause(libxl_ctx *ctx,
+             goto out;
+         }
+     }
++#endif
+     ret = xc_domain_unpause(ctx->xch, domid);
+     if (ret<0) {
+         LIBXL__LOG_ERRNO(ctx, LIBXL__LOG_ERROR, "unpausing domain %d", domid);
