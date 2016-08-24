@@ -6,8 +6,6 @@ mount -t sysfs /sys /sys
 mount /var/run
 mount --bind /var/run /run
 
-mkdir -p /var/run/xen
-
 mkdir /dev/pts /dev/shm
 
 exit 0
