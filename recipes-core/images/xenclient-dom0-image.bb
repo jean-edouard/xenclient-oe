@@ -75,7 +75,6 @@ post_rootfs_shell_commands() {
 
 	# Create XL-related files and directories
 	mkdir -p ${IMAGE_ROOTFS}/var/lib/xen ;
-	mkdir -p ${IMAGE_ROOTFS}/var/log/xen ;
 	mkdir -p ${IMAGE_ROOTFS}/etc/xen ;
 	touch ${IMAGE_ROOTFS}/etc/xen/xl.conf ;
 
