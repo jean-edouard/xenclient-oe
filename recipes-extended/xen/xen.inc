@@ -61,6 +61,7 @@ SRC_URI = "${XEN_SRC_URI};name=source \
     file://libxl-Handle-Linux-stubdomain-specific-QEMUoptions.patch \
     file://libxl-Wait-for-QEMU-startup-in-stubdomain.patch \
     file://libxl-fix-linux-stubdom-compilation-issues.patch \
+    file://libxl-fix-qemu-ifup-script-path.patch \
 "
 
 SRC_URI[source.md5sum] := "${XEN_SRC_MD5SUM}"
