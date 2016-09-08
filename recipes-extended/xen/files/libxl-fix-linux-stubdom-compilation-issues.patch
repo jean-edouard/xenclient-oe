@@ -210,7 +210,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      libxl__store_libxl_entry(gc, guest_domid, "dm-version",
          libxl_device_model_version_to_string(dm_config->b_info.device_model_version));
      libxl__store_libxl_entry(gc, dm_domid, "stubdom-version",
-@@ -1514,12 +1561,27 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+@@ -1514,12 +1561,47 @@ void libxl__spawn_stub_dm(libxl__egc *eg
                     "%d", guest_domid);
      if (guest_config->b_info.stubdomain_version == LIBXL_STUBDOMAIN_VERSION_LINUX) {
          /* qemu-xen is used as a dm in the stubdomain, so we set the bios
@@ -221,12 +221,32 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
                                         libxl__xs_get_dompath(gc, guest_domid)),
                          "%s",
                          libxl_bios_type_to_string(LIBXL_BIOS_TYPE_SEABIOS));
-+        /* We have to add the device models extended power management type to enable acpi
-+         * in the stubby */
++
++#if 0
 +        libxl__xs_write(gc, XBT_NULL,
-+                        libxl__sprintf(gc, "/local/domain/0/device-model/%d/xen_extended_power_mgmt",
-+                                       guest_domid),
-+                        "2");
++                        libxl__sprintf(gc, "/local/domain/0/device-model/%d",
++                                       guest_domid), "%s" ,"");
++
++        LOGE(ERROR, "Prepping transaction");
++        /* We also have to set XS permissions to 'r' */
++        t = xs_transaction_start(ctx->xsh);
++        perm[0].id = dm_domid;
++        perm[0].perms = XS_PERM_OWNER;
++        perm[1].id = guest_domid;
++        perm[1].perms = XS_PERM_READ;
++        /*
++        perm[1].id = guest_domid;
++        perm[1].perms = XS_PERM_READ; */
++        //xs_set_permissions(ctx->xsh, t, libxl__sprintf(gc, "/local/domain/0/device-model/%d/xen_extended_power_mgmt", guest_domid), perm, ARRAY_SIZE(perm));
++
++        LOGE(ERROR, "%d, %d, %d, %s", guest_domid, dm_domid, ARRAY_SIZE(perm), libxl__sprintf(gc, "/local/domain/0/device-model/%d", guest_domid));
++        xs_set_permissions(ctx->xsh, t, libxl__sprintf(gc, "/local/domain/0/device-model/%d", guest_domid), perm, ARRAY_SIZE(perm));
++
++        if (!xs_transaction_end(ctx->xsh, t, 0))
++            LOGE(ERROR, "TRANSACTION FAILED!!!!!");
++
++        LOGE(ERROR, "set permissions for extended power management");
++#endif
 +        /* We have to add seabios-legacy-roms in the guests XS node */
 +        libxl__xs_write(gc, XBT_NULL,
 +                        libxl__sprintf(gc, "%s/hvmloader/seabios-legacy-load-roms",
@@ -239,7 +259,31 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      }
      ret = xc_domain_set_target(ctx->xch, dm_domid, guest_domid);
      if (ret<0) {
-@@ -1549,10 +1611,10 @@ retry_transaction:
+@@ -1536,23 +1618,33 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+     perm[1].id = guest_domid;
+     perm[1].perms = XS_PERM_READ;
+ retry_transaction:
++    LOGE(ERROR, "Doing THE transaction");
+     t = xs_transaction_start(ctx->xsh);
+     xs_mkdir(ctx->xsh, t,
+              libxl__device_model_xs_path(gc, dm_domid, guest_domid, ""));
++    LOGE(ERROR, "mkdir %s", libxl__device_model_xs_path(gc, dm_domid, guest_domid, ""));
+     xs_set_permissions(ctx->xsh, t,
+                        libxl__device_model_xs_path(gc, dm_domid,
+                                                    guest_domid, ""),
+                        perm, ARRAY_SIZE(perm));
+-    if (!xs_transaction_end(ctx->xsh, t, 0))
++    if (!xs_transaction_end(ctx->xsh, t, 0)) {
+         if (errno == EAGAIN)
+             goto retry_transaction;
++        else
++            LOGE(ERROR, "Got an error != EAGAIN");
++    }
++
++    /* We have to add the device models extended power management type to enable acpi
++     * in the stubby */
++    libxl__xs_write(gc, XBT_NULL,
++                    libxl__device_model_xs_path(gc, dm_domid, guest_domid, "/xen_extended_power_mgmt"), "2");
  
      libxl__multidev_begin(ao, &sdss->multidev);
      sdss->multidev.callback = spawn_stub_launch_dm;
@@ -254,7 +298,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      libxl__add_disks(egc, ao, dm_domid, dm_config, &sdss->multidev);
      libxl__multidev_prepared(egc, &sdss->multidev, 0);
  
-@@ -1568,7 +1630,6 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1568,7 +1660,6 @@ static void spawn_stub_launch_dm(libxl__
  {
      libxl__stub_dm_spawn_state *sdss = CONTAINER_OF(multidev, *sdss, multidev);
      STATE_AO_GC(sdss->dm.spawn.ao);
@@ -262,7 +306,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      int i, num_console = STUBDOM_SPECIAL_CONSOLES;
      libxl__device_console *console;
  
-@@ -1613,35 +1674,27 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1613,35 +1704,27 @@ static void spawn_stub_launch_dm(libxl__
      for (i = 0; i < num_console; i++) {
          libxl__device device;
          console[i].devid = i;
@@ -305,7 +349,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
                      break;
                  }
              default:
-@@ -1661,6 +1714,11 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1661,6 +1744,11 @@ static void spawn_stub_launch_dm(libxl__
      sdss->pvqemu.build_state = &sdss->dm_state;
      sdss->pvqemu.callback = spawn_stubdom_pvqemu_cb;
  
@@ -317,7 +361,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      libxl__spawn_local_dm(egc, &sdss->pvqemu);
  
      return;
-@@ -1711,7 +1769,7 @@ static void stub_dm_watch_event(libxl__e
+@@ -1711,7 +1799,7 @@ static void stub_dm_watch_event(libxl__e
          if (dm_domid) {
              sdss->dis.ao = sdss->dm.spawn.ao;
              sdss->dis.domid = dm_domid;
