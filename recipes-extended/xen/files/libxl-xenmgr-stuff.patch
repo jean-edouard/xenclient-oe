@@ -250,15 +250,6 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      const libxl_sdl_info *sdl = dm_sdl(guest_config);
      const char *keymap = dm_keymap(guest_config);
      char *machinearg;
-@@ -742,7 +750,7 @@ static int libxl__build_device_model_arg
-                                         "path=%s/qmp-libxl-%d,server,nowait",
-                                         libxl__run_dir_path(), guest_domid));
- 
--        flexarray_append(dm_args, "-no-shutdown");
-+        flexarray_append(dm_args, "-nodefaults");
-         flexarray_append(dm_args, "-mon");
-         flexarray_append(dm_args, "chardev=libxl-cmd,mode=control");
-     }
 @@ -831,7 +839,21 @@ static int libxl__build_device_model_arg
      /*
       * surfman is our default backend
@@ -1032,3 +1023,14 @@ Index: xen-4.6.1/tools/libxl/xl_cmdtable.c
 +_hidden const libxl_display_info *libxl__dm_display(const libxl_domain_config *g_cfg);
 +
  _hidden const libxl_vnc_info *libxl__dm_vnc(const libxl_domain_config *g_cfg);
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl_blktap2.c
++++ xen-4.6.1/tools/libxl/libxl_blktap2.c
+@@ -40,6 +40,7 @@ char *libxl__blktap_devpath(libxl__gc *g
+             return devname;
+     }
+
++    setenv("TAPDISK2_CRYPTO_KEYDIR", "/config/platform-crypto-keys", 1);
+     params = libxl__sprintf(gc, "%s:%s", type, disk);
+     err = tap_ctl_create(params, &devname);
+     if (!err) {
