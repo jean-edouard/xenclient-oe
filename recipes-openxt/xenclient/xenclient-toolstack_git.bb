@@ -43,7 +43,7 @@ CFLAGS_append = " -I${OCAML_HEADERS}"
 PV = "0+git${SRCPV}"
 
 SRCREV = "${AUTOREV}"
-SRC_URI = "git://github.com/mbgrego/toolstack.git;protocol=${OPENXT_GIT_PROTOCOL};branch=xen-4.6.1-uprev	\
+SRC_URI = "git://${OPENXT_GIT_MIRROR}/toolstack.git;protocol=${OPENXT_GIT_PROTOCOL};branch=${OPENXT_BRANCH}	\
            file://vif \
            file://xenstored.initscript \
            "
