@@ -1,0 +1,75 @@
+Index: qemu-1.4.0/xen-all.c
+===================================================================
+--- qemu-1.4.0.orig/xen-all.c
++++ qemu-1.4.0/xen-all.c
+@@ -373,14 +373,14 @@ go_physmap:
+                                    XEN_DOMCTL_MEM_CACHEATTR_WC);
+ 
+     snprintf(path, sizeof(path),
+-            "/local/domain/0/device-model/%d/physmap/%"PRIx64"/start_addr",
++            "device-model/%d/physmap/%"PRIx64"/start_addr",
+             xen_domid, (uint64_t)phys_offset);
+     snprintf(value, sizeof(value), "%"PRIx64, (uint64_t)start_addr);
+     if (!xs_write(state->xenstore, 0, path, value, strlen(value))) {
+         return -1;
+     }
+     snprintf(path, sizeof(path),
+-            "/local/domain/0/device-model/%d/physmap/%"PRIx64"/size",
++            "device-model/%d/physmap/%"PRIx64"/size",
+             xen_domid, (uint64_t)phys_offset);
+     snprintf(value, sizeof(value), "%"PRIx64, (uint64_t)size);
+     if (!xs_write(state->xenstore, 0, path, value, strlen(value))) {
+@@ -388,7 +388,7 @@ go_physmap:
+     }
+     if (mr->name) {
+         snprintf(path, sizeof(path),
+-                "/local/domain/0/device-model/%d/physmap/%"PRIx64"/name",
++                "device-model/%d/physmap/%"PRIx64"/name",
+                 xen_domid, (uint64_t)phys_offset);
+         if (!xs_write(state->xenstore, 0, path, mr->name, strlen(mr->name))) {
+             return -1;
+@@ -1056,7 +1056,7 @@ static void xenstore_record_dm_state(str
+         exit(1);
+     }
+ 
+-    snprintf(path, sizeof (path), "/local/domain/0/device-model/%u/state", xen_domid);
++    snprintf(path, sizeof (path), "device-model/%u/state", xen_domid);
+     if (!xs_write(xs, XBT_NULL, path, state, strlen(state))) {
+         fprintf(stderr, "error recording dm state\n");
+         exit(1);
+@@ -1128,7 +1128,7 @@ static void xen_read_physmap(XenIOState
+     char **entries = NULL;
+ 
+     snprintf(path, sizeof(path),
+-            "/local/domain/0/device-model/%d/physmap", xen_domid);
++            "device-model/%d/physmap", xen_domid);
+     entries = xs_directory(state->xenstore, 0, path, &num);
+     if (entries == NULL)
+         return;
+@@ -1137,7 +1137,7 @@ static void xen_read_physmap(XenIOState
+         physmap = g_malloc(sizeof (XenPhysmap));
+         physmap->phys_offset = strtoull(entries[i], NULL, 16);
+         snprintf(path, sizeof(path),
+-                "/local/domain/0/device-model/%d/physmap/%s/start_addr",
++                "device-model/%d/physmap/%s/start_addr",
+                 xen_domid, entries[i]);
+         value = xs_read(state->xenstore, 0, path, &len);
+         if (value == NULL) {
+@@ -1148,7 +1148,7 @@ static void xen_read_physmap(XenIOState
+         free(value);
+ 
+         snprintf(path, sizeof(path),
+-                "/local/domain/0/device-model/%d/physmap/%s/size",
++                "device-model/%d/physmap/%s/size",
+                 xen_domid, entries[i]);
+         value = xs_read(state->xenstore, 0, path, &len);
+         if (value == NULL) {
+@@ -1159,7 +1159,7 @@ static void xen_read_physmap(XenIOState
+         free(value);
+ 
+         snprintf(path, sizeof(path),
+-                "/local/domain/0/device-model/%d/physmap/%s/name",
++                "device-model/%d/physmap/%s/name",
+                 xen_domid, entries[i]);
+         physmap->name = xs_read(state->xenstore, 0, path, &len);
+ 
