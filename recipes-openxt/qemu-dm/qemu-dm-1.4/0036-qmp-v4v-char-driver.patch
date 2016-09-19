@@ -10,7 +10,7 @@ Index: qemu-1.4.0/qemu-char.c
  
  #ifndef _WIN32
  #include <sys/times.h>
-@@ -2027,6 +2028,173 @@ static CharDriverState *qemu_chr_open_wi
+@@ -2027,6 +2028,201 @@ static CharDriverState *qemu_chr_open_wi
  #endif /* !_WIN32 */
  
  /***********************************************************/
@@ -26,6 +26,9 @@ Index: qemu-1.4.0/qemu-char.c
 +
 +#define V4V_CHARDRV_NAME  "[v4v-chardrv]"
 +
++#define V4V_MAGIC_CONNECT    "live"
++#define V4V_MAGIC_DISCONNECT "dead"
++
 +typedef struct {
 +    int fd;
 +    v4v_addr_t remote_addr;
@@ -34,6 +37,7 @@ Index: qemu-1.4.0/qemu-char.c
 +    int bufcnt;
 +    int bufptr;
 +    int max_size;
++    int connected;
 +} V4vCharDriver;
 +
 +static int v4v_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
@@ -69,6 +73,27 @@ Index: qemu-1.4.0/qemu-char.c
 +    return s->max_size;
 +}
 +
++static void v4v_chr_read(void *opaque);
++
++static void v4v_chr_update_read_handler(CharDriverState *chr)
++{
++    V4vCharDriver *s = chr->opaque;
++
++    if (s->fd >= 0) {
++        qemu_set_fd_handler2(s->fd, v4v_chr_read_poll,
++                             v4v_chr_read, NULL, chr);
++    }
++}
++
++static void v4v_chr_connect(CharDriverState *chr)
++{
++    V4vCharDriver *s = chr->opaque;
++
++    v4v_chr_update_read_handler(chr);
++    qemu_chr_generic_open(chr);
++    s->connected = 1;
++}
++
 +static void v4v_chr_read(void *opaque)
 +{
 +    CharDriverState *chr = opaque;
@@ -84,6 +109,17 @@ Index: qemu-1.4.0/qemu-char.c
 +                V4V_CHARDRV_NAME, strerror(errno), ret);
 +        return;
 +    }
++    if (s->connected == 0 && !strncmp((char*)(s->buf), V4V_MAGIC_CONNECT, 4)) {
++        fprintf(stderr, "v4v_recvfrom() returned V4V_MAGIC_CONNECT, connecting.\n");
++        v4v_chr_connect(chr);
++        return;
++    }
++    if (s->connected == 1 && !strncmp((char*)(s->buf), V4V_MAGIC_DISCONNECT, 4)) {
++        fprintf(stderr, "v4v_recvfrom() returned V4V_MAGIC_DISCONNECT, closing.\n");
++        s->connected = 0;
++        qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
++        return;
++    }
 +
 +    s->bufcnt = ret;
 +    s->bufptr = 0;
@@ -91,16 +127,6 @@ Index: qemu-1.4.0/qemu-char.c
 +        qemu_chr_be_write(chr, &s->buf[s->bufptr], 1);
 +        s->bufptr++;
 +        s->max_size = qemu_chr_be_can_write(chr);
-+    }
-+}
-+
-+static void v4v_chr_update_read_handler(CharDriverState *chr)
-+{
-+    V4vCharDriver *s = chr->opaque;
-+
-+    if (s->fd >= 0) {
-+        qemu_set_fd_handler2(s->fd, v4v_chr_read_poll,
-+                             v4v_chr_read, NULL, chr);
 +    }
 +}
 +
@@ -163,6 +189,8 @@ Index: qemu-1.4.0/qemu-char.c
 +    /* V4Vs are always open on creation */
 +    qemu_chr_generic_open(chr);
 +
++    s->connected = 1;
++
 +    return chr;
 +
 +return_err:
@@ -184,7 +212,7 @@ Index: qemu-1.4.0/qemu-char.c
  /* UDP Net console */
  
  typedef struct {
-@@ -2852,6 +3020,7 @@ QemuOpts *qemu_chr_parse_compat(const ch
+@@ -2852,6 +3048,7 @@ QemuOpts *qemu_chr_parse_compat(const ch
          strcmp(filename, "pty")     == 0 ||
          strcmp(filename, "msmouse") == 0 ||
          strcmp(filename, "braille") == 0 ||
@@ -192,7 +220,7 @@ Index: qemu-1.4.0/qemu-char.c
          strcmp(filename, "stdio")   == 0) {
          qemu_opt_set(opts, "backend", filename);
          return opts;
-@@ -2979,6 +3148,7 @@ static const struct {
+@@ -2979,6 +3176,7 @@ static const struct {
      { .name = "null",      .open = qemu_chr_open_null },
      { .name = "socket",    .open = qemu_chr_open_socket },
      { .name = "udp",       .open = qemu_chr_open_udp },
