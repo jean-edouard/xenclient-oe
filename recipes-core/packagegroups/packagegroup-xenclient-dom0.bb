@@ -61,6 +61,7 @@ RDEPENDS_${PN} = " \
     xenclient-sec-scripts \
     pmtools \
     xen-blktap \
+    xen-libxl \
     svirt-interpose \
     selinux-load \
     ustr \
