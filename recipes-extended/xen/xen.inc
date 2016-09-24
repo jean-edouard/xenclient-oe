@@ -59,6 +59,15 @@ SRC_URI = "${XEN_SRC_URI};name=source \
     file://xsa-183-x86-missing-smap-whitelisting-in-32-bit-exception-event-delivery.patch \
     file://xsa-185-x86-Disallow-L3-recursive-pagetable-for-32-bit-PV-guests.patch \
     file://xsa-187-x86-hvm-overflow-of-sh_ctxt-seg_reg.patch \
+    file://libxl-RFC-4of7-Add-stubdomain-version-tools-domain-build-info.patch \
+    file://libxl-RFC-5of7-Handle-Linux-stubdomain-specific-QEMUoptions.patch \
+    file://libxl-RFC-6of7-Build-the-domain-with-a-Linux-based-stubdomain.patch \
+    file://libxl-RFC-7of7-Wait-for-QEMU-startup-in-stubdomain.patch \
+    file://libxl-RFC-fixes.patch \
+    file://libxl-misc-fixes.patch \
+    file://libxl-vif-make-ioemu-and-stubdom-mac-addresses-configurable.patch \
+    file://libxl-openxt-specific-changes.patch \
+    file://libxl-xenmgr-stuff.patch \
 "
 
 SRC_URI[source.md5sum] := "${XEN_SRC_MD5SUM}"

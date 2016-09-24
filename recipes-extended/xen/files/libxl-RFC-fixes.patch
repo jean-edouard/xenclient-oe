@@ -1,0 +1,60 @@
+################################################################################
+SHORT DESCRIPTION:
+################################################################################
+LibXL Linux stubdomain support fixes
+
+################################################################################
+LONG DESCRIPTION:
+################################################################################
+This patch fixes various issues in libxl-RFC-*.patch
+
+################################################################################
+CHANGELOG
+################################################################################
+Authors:
+Martin Osterloh <osterlohm@ainfosec.com>
+
+################################################################################
+REMOVAL
+################################################################################
+If the original RFC ever gets merged upstream, these issues will probably be
+fixed.
+
+################################################################################
+UPSTREAM PLAN
+################################################################################
+If we decide to initiate a third Linux stubdomain, this patch should be included
+
+################################################################################
+INTERNAL DEPENDENCIES
+################################################################################
+libxl-RFC-*.patch
+
+################################################################################
+PATCHES
+################################################################################
+Index: xen-4.6.1/tools/libxl/libxl_dm.c
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl_dm.c
++++ xen-4.6.1/tools/libxl/libxl_dm.c
+@@ -1514,7 +1514,7 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+                    "%d", guest_domid);
+     if (guest_config->b_info.stubdomain_version == LIBXL_STUBDOMAIN_VERSION_LINUX) {
+         /* qemu-xen is used as a dm in the stubdomain, so we set the bios
+-         * accroding to this */
++         * according to this */
+         libxl__xs_write(gc, XBT_NULL,
+                         libxl__sprintf(gc, "%s/hvmloader/bios",
+                                        libxl__xs_get_dompath(gc, guest_domid)),
+@@ -1711,7 +1711,10 @@ static void stub_dm_watch_event(libxl__e
+         if (dm_domid) {
+             sdss->dis.ao = sdss->dm.spawn.ao;
+             sdss->dis.domid = dm_domid;
+-            sdss->dis.callback = spaw_stubdom_pvqemu_destroy_cb;
++            /* FIXME: the following line references a non-existent function,
++             *   even without the typo. Commenting out for now.
++             */
++            /* sdss->dis.callback = spaw_stubdom_pvqemu_destroy_cb; */
+             libxl__destroy_domid(egc, &sdss->dis);
+         }
+        return;
