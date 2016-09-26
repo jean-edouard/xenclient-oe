@@ -82,23 +82,9 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
              break;
          case LIBXL_VGA_INTERFACE_TYPE_CIRRUS:
              break;
-@@ -580,7 +573,10 @@ static int libxl__build_device_model_arg
-                               libxl__sprintf(gc, "%s", s), NULL);
-         free(s);
- 
--        for (i = 0; i < num_nics; i++) {
-+        /* OpenXT: We want emulated networking only for guests with stubdoms */
-+        /* Note: half-indenting the second line to avoid shifting everything */
-+        if (b_info->stubdomain_version == LIBXL_STUBDOMAIN_VERSION_LINUX) {
-+          for (i = 0; i < num_nics; i++) {
-             if (nics[i].nictype == LIBXL_NIC_TYPE_VIF_IOEMU) {
-                 char *smac;
-                 if (!libxl__mac_is_default(&nics[i].mac_ioemu))
-@@ -605,11 +601,11 @@ static int libxl__build_device_model_arg
-                                   NULL);
+@@ -606,10 +599,9 @@ static int libxl__build_device_model_arg
                  ioemu_nics++;
              }
-+          }
          }
 -        /* If we have no emulated nics, tell qemu not to create any */
 -        if ( ioemu_nics == 0 ) {
@@ -110,7 +96,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
          if (libxl_defbool_val(b_info->u.hvm.gfx_passthru)) {
              flexarray_append(dm_args, "-gfx_passthru");
          }
-@@ -737,19 +733,22 @@ static int libxl__build_device_model_arg
+@@ -737,19 +729,22 @@ static int libxl__build_device_model_arg
                        "-xen-domid",
                        libxl__sprintf(gc, "%d", guest_domid), NULL);
  
@@ -141,7 +127,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      for (i = 0; i < guest_config->num_channels; i++) {
          connection = guest_config->channels[i].connection;
          devid = guest_config->channels[i].devid;
-@@ -783,7 +782,7 @@ static int libxl__build_device_model_arg
+@@ -783,7 +778,7 @@ static int libxl__build_device_model_arg
      }
  
      if (c_info->name) {
@@ -150,7 +136,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      }
  
      if (vnc && !is_stubdom) {
-@@ -825,17 +824,12 @@ static int libxl__build_device_model_arg
+@@ -825,17 +820,12 @@ static int libxl__build_device_model_arg
          }
  
          flexarray_append(dm_args, vncarg);
@@ -171,7 +157,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
  
      if (sdl && !is_stubdom) {
          flexarray_append(dm_args, "-sdl");
-@@ -934,7 +928,7 @@ static int libxl__build_device_model_arg
+@@ -934,7 +924,7 @@ static int libxl__build_device_model_arg
  
          if (b_info->u.hvm.boot) {
              flexarray_vappend(dm_args, "-boot",
@@ -180,23 +166,9 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
          }
          if (libxl_defbool_val(b_info->u.hvm.usb)
              || b_info->u.hvm.usbdevice
-@@ -1014,7 +1008,10 @@ static int libxl__build_device_model_arg
-                 flexarray_append(dm_args, libxl__sprintf(gc, "%d",
-                                                          b_info->max_vcpus));
-         }
--        for (i = 0; i < num_nics; i++) {
-+        /* OpenXT: We want emulated networking only for guests with stubdoms */
-+        /* Note: half-indenting the second line to avoid shifting everything */
-+        if (b_info->stubdomain_version == LIBXL_STUBDOMAIN_VERSION_LINUX) {
-+          for (i = 0; i < num_nics; i++) {
-             if (nics[i].nictype == LIBXL_NIC_TYPE_VIF_IOEMU) {
-                 char *smac;
-                 if (!libxl__mac_is_default(&nics[i].mac_ioemu))
-@@ -1038,12 +1035,11 @@ static int libxl__build_device_model_arg
-                                           libxl_tapif_script(gc, b_info)));
+@@ -1039,11 +1029,9 @@ static int libxl__build_device_model_arg
                  ioemu_nics++;
              }
-+          }
          }
 -        /* If we have no emulated nics, tell qemu not to create any */
 -        if ( ioemu_nics == 0 ) {
@@ -209,7 +181,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
          if (libxl_defbool_val(b_info->u.hvm.gfx_passthru)) {
              flexarray_append(dm_args, "-gfx_passthru");
          }
-@@ -1181,7 +1177,7 @@ static int libxl__build_device_model_arg
+@@ -1181,7 +1169,7 @@ static int libxl__build_device_model_arg
                      if (b_info->stubdomain_version == LIBXL_STUBDOMAIN_VERSION_LINUX)
                          drive = libxl__sprintf
                                  (gc, "file=%s%c,if=ide,index=%d,media=disk,cache=writeback,format=%s",
@@ -218,7 +190,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
                      else
                          drive = libxl__sprintf
                                  (gc, "file=%s,if=ide,index=%d,media=disk,format=%s,cache=writeback",
-@@ -1380,7 +1376,6 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+@@ -1380,7 +1368,6 @@ void libxl__spawn_stub_dm(libxl__egc *eg
      char **args;
      struct xs_permissions perm[2];
      xs_transaction_t t;
@@ -226,7 +198,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
  
      /* convenience aliases */
      libxl_domain_config *const dm_config = &sdss->dm_config;
-@@ -1469,25 +1464,58 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+@@ -1469,43 +1456,83 @@ void libxl__spawn_stub_dm(libxl__egc *eg
          stubdom_state->pv_ramdisk.path = "";
          break;
      case LIBXL_STUBDOMAIN_VERSION_LINUX:
@@ -298,7 +270,25 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      /* fixme: this function can leak the stubdom if it fails */
      ret = libxl__domain_make(gc, dm_config, &sdss->pvqemu.guest_domid,
                               &stubdom_state->config);
-@@ -1498,14 +1526,6 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+     if (ret)
+         goto out;
+     uint32_t dm_domid = sdss->pvqemu.guest_domid;
++
++    /* OpenXT: Start the QMP helper */
++    sdss->qmp_helper_pid = fork();
++    if (sdss->qmp_helper_pid == -1)
++        LOG(ERROR, "Failed to fork");
++    else if (sdss->qmp_helper_pid == 0)
++        execl(QMP_HELPER_PATH, QMP_HELPER_PATH, libxl__sprintf(gc, "%d", guest_domid), libxl__sprintf(gc, "%d", dm_domid), NULL);
++
++    /* OpenXT: Start the ATAPI helper */
++    sdss->atapi_pt_helper_pid = fork();
++    if (sdss->atapi_pt_helper_pid == -1)
++        LOG(ERROR, "Failed to fork");
++    else if (sdss->atapi_pt_helper_pid == 0)
++        execl(ATAPI_PT_HELPER_PATH, ATAPI_PT_HELPER_PATH, libxl__sprintf(gc, "%d", guest_domid), libxl__sprintf(gc, "%d", dm_domid), NULL);
++
+     ret = libxl__domain_build(gc, dm_config, dm_domid, stubdom_state);
      if (ret)
          goto out;
  
@@ -313,7 +303,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      libxl__store_libxl_entry(gc, guest_domid, "dm-version",
          libxl_device_model_version_to_string(dm_config->b_info.device_model_version));
      libxl__store_libxl_entry(gc, dm_domid, "stubdom-version",
-@@ -1528,6 +1548,11 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+@@ -1528,6 +1555,11 @@ void libxl__spawn_stub_dm(libxl__egc *eg
                                         libxl__xs_get_dompath(gc, guest_domid)),
                          "%s",
                          libxl_bios_type_to_string(LIBXL_BIOS_TYPE_SEABIOS));
@@ -325,7 +315,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      }
      ret = xc_domain_set_target(ctx->xch, dm_domid, guest_domid);
      if (ret<0) {
-@@ -1555,12 +1580,15 @@ retry_transaction:
+@@ -1555,12 +1587,15 @@ retry_transaction:
          if (errno == EAGAIN)
              goto retry_transaction;
  
@@ -345,7 +335,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      libxl__add_disks(egc, ao, dm_domid, dm_config, &sdss->multidev);
      libxl__multidev_prepared(egc, &sdss->multidev, 0);
  
-@@ -1576,7 +1604,6 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1576,7 +1611,6 @@ static void spawn_stub_launch_dm(libxl__
  {
      libxl__stub_dm_spawn_state *sdss = CONTAINER_OF(multidev, *sdss, multidev);
      STATE_AO_GC(sdss->dm.spawn.ao);
@@ -353,7 +343,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      int i, num_console = STUBDOM_SPECIAL_CONSOLES;
      libxl__device_console *console;
  
-@@ -1621,21 +1648,16 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1621,21 +1655,16 @@ static void spawn_stub_launch_dm(libxl__
      for (i = 0; i < num_console; i++) {
          libxl__device device;
          console[i].devid = i;
@@ -379,7 +369,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
                  break;
              case STUBDOM_CONSOLE_SAVE:
                  if (guest_config->b_info.stubdomain_version
-@@ -1669,6 +1691,12 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1669,6 +1698,12 @@ static void spawn_stub_launch_dm(libxl__
      sdss->pvqemu.build_state = &sdss->dm_state;
      sdss->pvqemu.callback = spawn_stubdom_pvqemu_cb;
  
@@ -392,7 +382,39 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      libxl__spawn_local_dm(egc, &sdss->pvqemu);
  
      return;
-@@ -1881,6 +1909,11 @@ void libxl__spawn_local_dm(libxl__egc *e
+@@ -1678,6 +1713,19 @@ out:
+     spawn_stubdom_pvqemu_cb(egc, &sdss->pvqemu, ret);
+ }
+ 
++static void spawn_stubdom_pvqemu_destroy_cb(libxl__egc *egc,
++                                            libxl__destroy_domid_state *dis,
++                                            int rc)
++{
++    libxl__stub_dm_spawn_state *sdss = CONTAINER_OF(dis, *sdss, dis);
++    STATE_AO_GC(sdss->dm.spawn.ao);
++
++    LOGE(ERROR, "Entering destroy callback");
++
++    kill(sdss->qmp_helper_pid, SIGKILL);
++    kill(sdss->atapi_pt_helper_pid, SIGKILL);
++}
++
+ static void spawn_stubdom_pvqemu_cb(libxl__egc *egc,
+                                 libxl__dm_spawn_state *stubdom_dmss,
+                                 int rc)
+@@ -1719,10 +1767,7 @@ static void stub_dm_watch_event(libxl__e
+         if (dm_domid) {
+             sdss->dis.ao = sdss->dm.spawn.ao;
+             sdss->dis.domid = dm_domid;
+-            /* FIXME: the following line references a non-existent function,
+-             *   even without the typo. Commenting out for now.
+-             */
+-            /* sdss->dis.callback = spaw_stubdom_pvqemu_destroy_cb; */
++            sdss->dis.callback = spawn_stubdom_pvqemu_destroy_cb;
+             libxl__destroy_domid(egc, &sdss->dis);
+         }
+        return;
+@@ -1881,6 +1926,11 @@ void libxl__spawn_local_dm(libxl__egc *e
                          b_info->device_model_version==LIBXL_DEVICE_MODEL_VERSION_QEMU_XEN_TRADITIONAL &&
                          !libxl__vnuma_configured(b_info));
          free(path);
@@ -470,3 +492,26 @@ Index: xen-4.6.1/tools/libxl/libxl_create.c
          }
      }
  
+Index: xen-4.6.1/tools/libxl/libxl_internal.h
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl_internal.h
++++ xen-4.6.1/tools/libxl/libxl_internal.h
+@@ -112,6 +112,9 @@
+ #define TAP_DEVICE_SUFFIX "-emu"
+ #define DOMID_XS_PATH "domid"
+ 
++#define QMP_HELPER_PATH "/usr/lib/xen/bin/qmp_helper"
++#define ATAPI_PT_HELPER_PATH "/usr/lib/xen/bin/atapi_pt_helper"
++
+ #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+ 
+ #define ROUNDUP(_val, _order)                                           \
+@@ -3317,6 +3320,8 @@ typedef struct {
+     libxl__destroy_domid_state dis;
+     libxl__multidev multidev;
+     libxl__xswait_state xswait;
++    pid_t qmp_helper_pid;
++    pid_t atapi_pt_helper_pid;
+ } libxl__stub_dm_spawn_state;
+ 
+ _hidden void libxl__spawn_stub_dm(libxl__egc *egc, libxl__stub_dm_spawn_state*);
