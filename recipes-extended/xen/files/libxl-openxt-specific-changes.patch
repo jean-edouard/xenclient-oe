@@ -190,7 +190,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
                      else
                          drive = libxl__sprintf
                                  (gc, "file=%s,if=ide,index=%d,media=disk,format=%s,cache=writeback",
-@@ -1380,7 +1368,6 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+@@ -1382,7 +1370,6 @@ void libxl__spawn_stub_dm(libxl__egc *eg
      char **args;
      struct xs_permissions perm[2];
      xs_transaction_t t;
@@ -198,7 +198,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
  
      /* convenience aliases */
      libxl_domain_config *const dm_config = &sdss->dm_config;
-@@ -1469,43 +1456,83 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+@@ -1471,43 +1458,83 @@ void libxl__spawn_stub_dm(libxl__egc *eg
          stubdom_state->pv_ramdisk.path = "";
          break;
      case LIBXL_STUBDOMAIN_VERSION_LINUX:
@@ -303,7 +303,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      libxl__store_libxl_entry(gc, guest_domid, "dm-version",
          libxl_device_model_version_to_string(dm_config->b_info.device_model_version));
      libxl__store_libxl_entry(gc, dm_domid, "stubdom-version",
-@@ -1528,6 +1555,11 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+@@ -1530,6 +1557,11 @@ void libxl__spawn_stub_dm(libxl__egc *eg
                                         libxl__xs_get_dompath(gc, guest_domid)),
                          "%s",
                          libxl_bios_type_to_string(LIBXL_BIOS_TYPE_SEABIOS));
@@ -315,7 +315,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      }
      ret = xc_domain_set_target(ctx->xch, dm_domid, guest_domid);
      if (ret<0) {
-@@ -1555,12 +1587,15 @@ retry_transaction:
+@@ -1557,12 +1589,15 @@ retry_transaction:
          if (errno == EAGAIN)
              goto retry_transaction;
  
@@ -335,7 +335,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      libxl__add_disks(egc, ao, dm_domid, dm_config, &sdss->multidev);
      libxl__multidev_prepared(egc, &sdss->multidev, 0);
  
-@@ -1576,7 +1611,6 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1578,7 +1613,6 @@ static void spawn_stub_launch_dm(libxl__
  {
      libxl__stub_dm_spawn_state *sdss = CONTAINER_OF(multidev, *sdss, multidev);
      STATE_AO_GC(sdss->dm.spawn.ao);
@@ -343,7 +343,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      int i, num_console = STUBDOM_SPECIAL_CONSOLES;
      libxl__device_console *console;
  
-@@ -1621,21 +1655,16 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1623,21 +1657,16 @@ static void spawn_stub_launch_dm(libxl__
      for (i = 0; i < num_console; i++) {
          libxl__device device;
          console[i].devid = i;
@@ -369,7 +369,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
                  break;
              case STUBDOM_CONSOLE_SAVE:
                  if (guest_config->b_info.stubdomain_version
-@@ -1669,6 +1698,12 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1671,6 +1700,12 @@ static void spawn_stub_launch_dm(libxl__
      sdss->pvqemu.build_state = &sdss->dm_state;
      sdss->pvqemu.callback = spawn_stubdom_pvqemu_cb;
  
@@ -382,39 +382,76 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      libxl__spawn_local_dm(egc, &sdss->pvqemu);
  
      return;
-@@ -1678,6 +1713,19 @@ out:
-     spawn_stubdom_pvqemu_cb(egc, &sdss->pvqemu, ret);
+@@ -1704,42 +1739,6 @@ out:
+     stubdom_pvqemu_cb(egc, &sdss->multidev, rc);
  }
  
-+static void spawn_stubdom_pvqemu_destroy_cb(libxl__egc *egc,
-+                                            libxl__destroy_domid_state *dis,
-+                                            int rc)
-+{
-+    libxl__stub_dm_spawn_state *sdss = CONTAINER_OF(dis, *sdss, dis);
-+    STATE_AO_GC(sdss->dm.spawn.ao);
-+
-+    LOGE(ERROR, "Entering destroy callback");
-+
-+    kill(sdss->qmp_helper_pid, SIGKILL);
-+    kill(sdss->atapi_pt_helper_pid, SIGKILL);
-+}
-+
- static void spawn_stubdom_pvqemu_cb(libxl__egc *egc,
-                                 libxl__dm_spawn_state *stubdom_dmss,
-                                 int rc)
-@@ -1719,10 +1767,7 @@ static void stub_dm_watch_event(libxl__e
-         if (dm_domid) {
-             sdss->dis.ao = sdss->dm.spawn.ao;
-             sdss->dis.domid = dm_domid;
+-static void stub_dm_watch_event(libxl__egc *egc, libxl__xswait_state *xswa,
+-                                int rc, const char *p)
+-{
+-    EGC_GC;
+-    libxl__spawn_state *spawn = CONTAINER_OF(xswa, libxl__spawn_state, xswait);
+-    libxl__dm_spawn_state *pvqemu =
+-        CONTAINER_OF(spawn, libxl__dm_spawn_state, spawn);
+-    libxl__stub_dm_spawn_state *sdss =
+-        CONTAINER_OF(pvqemu, libxl__stub_dm_spawn_state, pvqemu);
+-    uint32_t dm_domid = sdss->pvqemu.guest_domid;
+-
+-    if (rc) {
+-        if (rc == ERROR_TIMEDOUT)
+-           LIBXL__LOG(CTX, XTL_DEBUG, "%s: startup timed out", xswa->what);
+-        if (dm_domid) {
+-            sdss->dis.ao = sdss->dm.spawn.ao;
+-            sdss->dis.domid = dm_domid;
 -            /* FIXME: the following line references a non-existent function,
 -             *   even without the typo. Commenting out for now.
 -             */
 -            /* sdss->dis.callback = spaw_stubdom_pvqemu_destroy_cb; */
-+            sdss->dis.callback = spawn_stubdom_pvqemu_destroy_cb;
-             libxl__destroy_domid(egc, &sdss->dis);
-         }
-        return;
-@@ -1881,6 +1926,11 @@ void libxl__spawn_local_dm(libxl__egc *e
+-            libxl__destroy_domid(egc, &sdss->dis);
+-        }
+-       return;
+-    }
+-
+-    if (!p)
+-        return;
+-
+-    if (strcmp(p, "running"))
+-        return;
+-
+-    libxl__xswait_stop(gc, xswa);
+-    sdss->callback(egc, &sdss->dm, rc);
+-}
+-
+ static void stubdom_pvqemu_cb(libxl__egc *egc,
+                               libxl__multidev *multidev,
+                               int rc)
+@@ -1747,7 +1746,6 @@ static void stubdom_pvqemu_cb(libxl__egc
+     libxl__stub_dm_spawn_state *sdss = CONTAINER_OF(multidev, *sdss, multidev);
+     STATE_AO_GC(sdss->dm.spawn.ao);
+     uint32_t dm_domid = sdss->pvqemu.guest_domid;
+-    libxl__xswait_state *xswait = &sdss->pvqemu.spawn.xswait;
+ 
+     libxl__xswait_init(&sdss->xswait);
+ 
+@@ -1756,16 +1754,7 @@ static void stubdom_pvqemu_cb(libxl__egc
+         goto out;
+     }
+ 
+-    /* wait for PV stubdom QEMU instance to be ready */
+-    libxl__xswait_init(xswait);
+-    xswait->ao = sdss->dm.spawn.ao;
+-    xswait->what = GCSPRINTF("stub domain %d startup", dm_domid);
+-    xswait->path = GCSPRINTF("/local/domain/0/device-model/%d/state",
+-                             sdss->dm.guest_domid);
+-    xswait->timeout_ms = LIBXL_DEVICE_MODEL_START_TIMEOUT * 1000;
+-    xswait->callback = stub_dm_watch_event;
+-    rc = libxl__xswait_start(gc, xswait);
+-    if (rc) goto out;
++    /* OpenXT: no need to wait for a dom0 device model, there's none. */
+ 
+     rc = libxl_domain_unpause(CTX, dm_domid);
+     if (rc) goto out;
+@@ -1883,6 +1872,11 @@ void libxl__spawn_local_dm(libxl__egc *e
                          b_info->device_model_version==LIBXL_DEVICE_MODEL_VERSION_QEMU_XEN_TRADITIONAL &&
                          !libxl__vnuma_configured(b_info));
          free(path);
@@ -435,33 +472,7 @@ Index: xen-4.6.1/tools/libxl/libxl.c
  /*
   * Copyright (C) 2009      Citrix Ltd.
   * Author Vincent Hanquez <vincent.hanquez@eu.citrix.com>
-@@ -153,7 +154,7 @@ int libxl_ctx_free(libxl_ctx *ctx)
- {
-     if (!ctx) return 0;
- 
--    int i;
-+    /* int i; */
-     GC_INIT(ctx);
- 
-     CTX_LOCK;
-@@ -170,6 +171,8 @@ int libxl_ctx_free(libxl_ctx *ctx)
-         libxl__evdisable_disk_eject(gc, eject);
- 
-     libxl_childproc_setmode(CTX,0,0);
-+    /* OpenXT: No idea why the following asserts fail, disabling for now... */
-+#if 0
-     for (i = 0; i < ctx->watch_nslots; i++)
-         assert(!libxl__watch_slot_contents(gc, i));
-     assert(!libxl__ev_fd_isregistered(&ctx->watch_efd));
-@@ -182,6 +185,7 @@ int libxl_ctx_free(libxl_ctx *ctx)
-     assert(LIBXL_TAILQ_EMPTY(&ctx->etimes));
-     assert(LIBXL_LIST_EMPTY(&ctx->evtchns_waiting));
-     assert(LIBXL_LIST_EMPTY(&ctx->aos_inprogress));
-+#endif
- 
-     if (ctx->xch) xc_interface_close(ctx->xch);
-     libxl_version_info_dispose(&ctx->version_info);
-@@ -1048,7 +1052,8 @@ int libxl_domain_unpause(libxl_ctx *ctx,
+@@ -1048,7 +1049,8 @@ int libxl_domain_unpause(libxl_ctx *ctx,
          if (rc < 0) {
              LOG(ERROR, "failed to unpause device model for domain %u:%d",
                  domid, rc);
