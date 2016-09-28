@@ -35,7 +35,7 @@ Index: xen-4.6.1/tools/libxl/libxl.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl.c
 +++ xen-4.6.1/tools/libxl/libxl.c
-@@ -972,6 +972,8 @@ int libxl_domain_suspend(libxl_ctx *ctx,
+@@ -969,6 +969,8 @@ int libxl_domain_suspend(libxl_ctx *ctx,
      AO_CREATE(ctx, domid, ao_how);
      int rc;
  
@@ -44,7 +44,7 @@ Index: xen-4.6.1/tools/libxl/libxl.c
      libxl_domain_type type = libxl__domain_type(gc, domid);
      if (type == LIBXL_DOMAIN_TYPE_INVALID) {
          rc = ERROR_FAIL;
-@@ -1010,6 +1012,9 @@ int libxl_domain_pause(libxl_ctx *ctx, u
+@@ -1007,6 +1009,9 @@ int libxl_domain_pause(libxl_ctx *ctx, u
          LIBXL__LOG_ERRNO(ctx, LIBXL__LOG_ERROR, "pausing domain %d", domid);
          return ERROR_FAIL;
      }
@@ -54,7 +54,7 @@ Index: xen-4.6.1/tools/libxl/libxl.c
      return 0;
  }
  
-@@ -1057,6 +1062,9 @@ int libxl_domain_unpause(libxl_ctx *ctx,
+@@ -1054,6 +1059,9 @@ int libxl_domain_unpause(libxl_ctx *ctx,
          }
      }
      ret = xc_domain_unpause(ctx->xch, domid);
@@ -64,7 +64,7 @@ Index: xen-4.6.1/tools/libxl/libxl.c
      if (ret<0) {
          LIBXL__LOG_ERRNO(ctx, LIBXL__LOG_ERROR, "unpausing domain %d", domid);
          rc = ERROR_FAIL;
-@@ -1156,6 +1164,24 @@ int libxl_domain_reboot(libxl_ctx *ctx,
+@@ -1153,6 +1161,24 @@ int libxl_domain_reboot(libxl_ctx *ctx,
      return ret;
  }
  
@@ -89,7 +89,7 @@ Index: xen-4.6.1/tools/libxl/libxl.c
  static void domain_death_occurred(libxl__egc *egc,
                                    libxl_evgen_domain_death **evg_upd,
                                    const char *why) {
-@@ -1267,6 +1293,8 @@ static void domain_death_xswatch_callbac
+@@ -1264,6 +1290,8 @@ static void domain_death_xswatch_callbac
                  libxl__event_occurred(egc, ev);
  
                  evg->shutdown_reported = 1;
@@ -98,7 +98,7 @@ Index: xen-4.6.1/tools/libxl/libxl.c
              }
              evg = LIBXL_TAILQ_NEXT(evg, entry);
          }
-@@ -3436,6 +3464,8 @@ void libxl__device_nic_add(libxl__egc *e
+@@ -3433,6 +3461,8 @@ void libxl__device_nic_add(libxl__egc *e
      aodev->action = LIBXL__DEVICE_ACTION_ADD;
      libxl__wait_device_connection(egc, aodev);
  
@@ -107,7 +107,7 @@ Index: xen-4.6.1/tools/libxl/libxl.c
      rc = 0;
  out:
      libxl__xs_transaction_abort(gc, &t);
-@@ -4128,6 +4158,9 @@ int libxl__device_vfb_add(libxl__gc *gc,
+@@ -4125,6 +4155,9 @@ int libxl__device_vfb_add(libxl__gc *gc,
                                libxl__xs_kvs_of_flexarray(gc, back, back->count),
                                libxl__xs_kvs_of_flexarray(gc, front, front->count),
                                NULL);
@@ -266,7 +266,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
  
      if (sdl && !is_stubdom) {
          flexarray_append(dm_args, "-sdl");
-@@ -1310,7 +1334,7 @@ static int libxl__write_stub_dmargs(libx
+@@ -1312,7 +1336,7 @@ static int libxl__write_stub_dmargs(libx
      while (args[i] != NULL) {
          if (linux_stubdom ||
              (strcmp(args[i], "-sdl") &&
