@@ -157,7 +157,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
  
      if (sdl && !is_stubdom) {
          flexarray_append(dm_args, "-sdl");
-@@ -934,7 +924,7 @@ static int libxl__build_device_model_arg
+@@ -934,7 +938,7 @@ static int libxl__build_device_model_arg
  
          if (b_info->u.hvm.boot) {
              flexarray_vappend(dm_args, "-boot",
@@ -166,7 +166,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
          }
          if (libxl_defbool_val(b_info->u.hvm.usb)
              || b_info->u.hvm.usbdevice
-@@ -1039,11 +1029,9 @@ static int libxl__build_device_model_arg
+@@ -1039,11 +1043,9 @@ static int libxl__build_device_model_arg
                  ioemu_nics++;
              }
          }
@@ -181,7 +181,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
          if (libxl_defbool_val(b_info->u.hvm.gfx_passthru)) {
              flexarray_append(dm_args, "-gfx_passthru");
          }
-@@ -1181,7 +1169,7 @@ static int libxl__build_device_model_arg
+@@ -1181,7 +1183,7 @@ static int libxl__build_device_model_arg
                      if (b_info->stubdomain_version == LIBXL_STUBDOMAIN_VERSION_LINUX)
                          drive = libxl__sprintf
                                  (gc, "file=%s%c,if=ide,index=%d,media=disk,cache=writeback,format=%s",
@@ -190,7 +190,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
                      else
                          drive = libxl__sprintf
                                  (gc, "file=%s,if=ide,index=%d,media=disk,format=%s,cache=writeback",
-@@ -1382,7 +1370,6 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+@@ -1382,7 +1384,6 @@ void libxl__spawn_stub_dm(libxl__egc *eg
      char **args;
      struct xs_permissions perm[2];
      xs_transaction_t t;
@@ -198,7 +198,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
  
      /* convenience aliases */
      libxl_domain_config *const dm_config = &sdss->dm_config;
-@@ -1471,43 +1458,83 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+@@ -1471,43 +1472,92 @@ void libxl__spawn_stub_dm(libxl__egc *eg
          stubdom_state->pv_ramdisk.path = "";
          break;
      case LIBXL_STUBDOMAIN_VERSION_LINUX:
@@ -273,20 +273,29 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      if (ret)
          goto out;
      uint32_t dm_domid = sdss->pvqemu.guest_domid;
++    pid_t pid;
 +
 +    /* OpenXT: Start the QMP helper */
-+    sdss->qmp_helper_pid = fork();
-+    if (sdss->qmp_helper_pid == -1)
++    pid = fork();
++    if (pid == -1)
 +        LOG(ERROR, "Failed to fork");
-+    else if (sdss->qmp_helper_pid == 0)
++    else if (pid == 0)
 +        execl(QMP_HELPER_PATH, QMP_HELPER_PATH, libxl__sprintf(gc, "%d", guest_domid), libxl__sprintf(gc, "%d", dm_domid), NULL);
++    libxl__xs_write(gc, XBT_NULL,
++                   libxl__sprintf(gc, "%s/qmp-helper-pid",
++                                  libxl__xs_get_dompath(gc, dm_domid)),
++                   "%d", pid);
 +
 +    /* OpenXT: Start the ATAPI helper */
-+    sdss->atapi_pt_helper_pid = fork();
-+    if (sdss->atapi_pt_helper_pid == -1)
++    pid = fork();
++    if (pid == -1)
 +        LOG(ERROR, "Failed to fork");
-+    else if (sdss->atapi_pt_helper_pid == 0)
++    else if (pid == 0)
 +        execl(ATAPI_PT_HELPER_PATH, ATAPI_PT_HELPER_PATH, libxl__sprintf(gc, "%d", guest_domid), libxl__sprintf(gc, "%d", dm_domid), NULL);
++    libxl__xs_write(gc, XBT_NULL,
++                   libxl__sprintf(gc, "%s/atapi-pt-helper-pid",
++                                  libxl__xs_get_dompath(gc, dm_domid)),
++                   "%d", pid);
 +
      ret = libxl__domain_build(gc, dm_config, dm_domid, stubdom_state);
      if (ret)
@@ -303,7 +312,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      libxl__store_libxl_entry(gc, guest_domid, "dm-version",
          libxl_device_model_version_to_string(dm_config->b_info.device_model_version));
      libxl__store_libxl_entry(gc, dm_domid, "stubdom-version",
-@@ -1530,6 +1557,11 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+@@ -1530,6 +1580,11 @@ void libxl__spawn_stub_dm(libxl__egc *eg
                                         libxl__xs_get_dompath(gc, guest_domid)),
                          "%s",
                          libxl_bios_type_to_string(LIBXL_BIOS_TYPE_SEABIOS));
@@ -315,7 +324,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      }
      ret = xc_domain_set_target(ctx->xch, dm_domid, guest_domid);
      if (ret<0) {
-@@ -1557,12 +1589,15 @@ retry_transaction:
+@@ -1557,12 +1612,15 @@ retry_transaction:
          if (errno == EAGAIN)
              goto retry_transaction;
  
@@ -335,7 +344,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      libxl__add_disks(egc, ao, dm_domid, dm_config, &sdss->multidev);
      libxl__multidev_prepared(egc, &sdss->multidev, 0);
  
-@@ -1578,7 +1613,6 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1578,7 +1636,6 @@ static void spawn_stub_launch_dm(libxl__
  {
      libxl__stub_dm_spawn_state *sdss = CONTAINER_OF(multidev, *sdss, multidev);
      STATE_AO_GC(sdss->dm.spawn.ao);
@@ -343,7 +352,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      int i, num_console = STUBDOM_SPECIAL_CONSOLES;
      libxl__device_console *console;
  
-@@ -1623,21 +1657,16 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1623,21 +1680,16 @@ static void spawn_stub_launch_dm(libxl__
      for (i = 0; i < num_console; i++) {
          libxl__device device;
          console[i].devid = i;
@@ -369,7 +378,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
                  break;
              case STUBDOM_CONSOLE_SAVE:
                  if (guest_config->b_info.stubdomain_version
-@@ -1671,6 +1700,12 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1671,6 +1723,12 @@ static void spawn_stub_launch_dm(libxl__
      sdss->pvqemu.build_state = &sdss->dm_state;
      sdss->pvqemu.callback = spawn_stubdom_pvqemu_cb;
  
@@ -382,7 +391,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      libxl__spawn_local_dm(egc, &sdss->pvqemu);
  
      return;
-@@ -1704,42 +1739,6 @@ out:
+@@ -1704,42 +1762,6 @@ out:
      stubdom_pvqemu_cb(egc, &sdss->multidev, rc);
  }
  
@@ -425,7 +434,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
  static void stubdom_pvqemu_cb(libxl__egc *egc,
                                libxl__multidev *multidev,
                                int rc)
-@@ -1747,7 +1746,6 @@ static void stubdom_pvqemu_cb(libxl__egc
+@@ -1747,7 +1769,6 @@ static void stubdom_pvqemu_cb(libxl__egc
      libxl__stub_dm_spawn_state *sdss = CONTAINER_OF(multidev, *sdss, multidev);
      STATE_AO_GC(sdss->dm.spawn.ao);
      uint32_t dm_domid = sdss->pvqemu.guest_domid;
@@ -433,7 +442,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
  
      libxl__xswait_init(&sdss->xswait);
  
-@@ -1756,16 +1754,7 @@ static void stubdom_pvqemu_cb(libxl__egc
+@@ -1756,16 +1777,7 @@ static void stubdom_pvqemu_cb(libxl__egc
          goto out;
      }
  
@@ -451,7 +460,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
  
      rc = libxl_domain_unpause(CTX, dm_domid);
      if (rc) goto out;
-@@ -1883,6 +1872,11 @@ void libxl__spawn_local_dm(libxl__egc *e
+@@ -1883,6 +1895,11 @@ void libxl__spawn_local_dm(libxl__egc *e
                          b_info->device_model_version==LIBXL_DEVICE_MODEL_VERSION_QEMU_XEN_TRADITIONAL &&
                          !libxl__vnuma_configured(b_info));
          free(path);
@@ -482,6 +491,34 @@ Index: xen-4.6.1/tools/libxl/libxl.c
          }
      }
      ret = xc_domain_unpause(ctx->xch, domid);
+@@ -1629,6 +1631,27 @@ void libxl__destroy_domid(libxl__egc *eg
+ 
+         libxl__qmp_cleanup(gc, domid);
+     }
++    /* OpenXT: if the domain has a stubdom, we kill the stubdom helpers here */
++    int dm_domid = libxl_get_stubdom_id(ctx, domid);
++    if (dm_domid) {
++        /* OpenXT: Kill qmp-helper */
++        pid = libxl__xs_read(gc, XBT_NULL,
++                             libxl__sprintf(gc,
++                                            "/local/domain/%d/qmp-helper-pid", dm_domid));
++        if (!pid)
++            LOG(ERROR, "Cannot get qmp_helper pid for domain %d", dm_domid);
++        else
++            kill(strtol(pid, NULL, 10), SIGKILL);
++
++        /* OpenXT: Kill atapi-pt-helper */
++        pid = libxl__xs_read(gc, XBT_NULL,
++                             libxl__sprintf(gc,
++                                            "/local/domain/%d/atapi-pt-helper-pid", dm_domid));
++        if (!pid)
++            LOG(ERROR, "Cannot get atapi-pt_helper pid for domain %d", dm_domid);
++        else
++            kill(strtol(pid, NULL, 10), SIGKILL);
++    }
+     dis->drs.ao = ao;
+     dis->drs.domid = domid;
+     dis->drs.callback = devices_destroy_cb;
 Index: xen-4.6.1/tools/libxl/libxl_create.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl_create.c
@@ -517,12 +554,3 @@ Index: xen-4.6.1/tools/libxl/libxl_internal.h
  #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
  
  #define ROUNDUP(_val, _order)                                           \
-@@ -3317,6 +3320,8 @@ typedef struct {
-     libxl__destroy_domid_state dis;
-     libxl__multidev multidev;
-     libxl__xswait_state xswait;
-+    pid_t qmp_helper_pid;
-+    pid_t atapi_pt_helper_pid;
- } libxl__stub_dm_spawn_state;
- 
- _hidden void libxl__spawn_stub_dm(libxl__egc *egc, libxl__stub_dm_spawn_state*);
