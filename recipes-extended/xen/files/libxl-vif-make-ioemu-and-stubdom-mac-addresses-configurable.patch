@@ -75,12 +75,14 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
                  const char *ifname = libxl__device_nic_devname(gc,
                                                  guest_domid, nics[i].devid,
                                                  LIBXL_NIC_TYPE_VIF_IOEMU);
-@@ -1255,6 +1261,8 @@ static void libxl__dm_vifs_from_hvm_gues
+@@ -1255,6 +1261,10 @@ static void libxl__dm_vifs_from_hvm_gues
          if (dm_config->nics[i].ifname)
              dm_config->nics[i].ifname = GCSPRINTF("%s" TAP_DEVICE_SUFFIX,
                                                    dm_config->nics[i].ifname);
 +        if (!libxl__mac_is_default(&guest_config->nics[i].mac_stubdom))
 +            memcpy(dm_config->nics[i].mac, guest_config->nics[i].mac_stubdom, 6);
++
++		dm_config->nics[i].mac[0] = dm_config->nics[i].mac[0] ^ 0x2;
      }
  
      dm_config->num_nics = nr;
@@ -127,7 +129,7 @@ Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/xl_cmdimpl.c
 +++ xen-4.6.1/tools/libxl/xl_cmdimpl.c
-@@ -1025,6 +1025,26 @@ static int parse_nic_config(libxl_device
+@@ -1015,6 +1015,26 @@ static int parse_nic_config(libxl_device
              nic->mac[i] = val;
              oparg = endptr + 1;
          }
