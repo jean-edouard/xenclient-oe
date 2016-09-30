@@ -157,7 +157,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
  
      if (sdl && !is_stubdom) {
          flexarray_append(dm_args, "-sdl");
-@@ -934,7 +938,7 @@ static int libxl__build_device_model_arg
+@@ -934,7 +924,7 @@ static int libxl__build_device_model_arg
  
          if (b_info->u.hvm.boot) {
              flexarray_vappend(dm_args, "-boot",
@@ -166,7 +166,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
          }
          if (libxl_defbool_val(b_info->u.hvm.usb)
              || b_info->u.hvm.usbdevice
-@@ -1039,11 +1043,9 @@ static int libxl__build_device_model_arg
+@@ -1039,11 +1029,9 @@ static int libxl__build_device_model_arg
                  ioemu_nics++;
              }
          }
@@ -181,7 +181,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
          if (libxl_defbool_val(b_info->u.hvm.gfx_passthru)) {
              flexarray_append(dm_args, "-gfx_passthru");
          }
-@@ -1181,7 +1183,7 @@ static int libxl__build_device_model_arg
+@@ -1181,7 +1169,7 @@ static int libxl__build_device_model_arg
                      if (b_info->stubdomain_version == LIBXL_STUBDOMAIN_VERSION_LINUX)
                          drive = libxl__sprintf
                                  (gc, "file=%s%c,if=ide,index=%d,media=disk,cache=writeback,format=%s",
@@ -190,7 +190,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
                      else
                          drive = libxl__sprintf
                                  (gc, "file=%s,if=ide,index=%d,media=disk,format=%s,cache=writeback",
-@@ -1382,7 +1384,6 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+@@ -1382,7 +1370,6 @@ void libxl__spawn_stub_dm(libxl__egc *eg
      char **args;
      struct xs_permissions perm[2];
      xs_transaction_t t;
@@ -198,7 +198,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
  
      /* convenience aliases */
      libxl_domain_config *const dm_config = &sdss->dm_config;
-@@ -1471,43 +1472,92 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+@@ -1471,43 +1458,92 @@ void libxl__spawn_stub_dm(libxl__egc *eg
          stubdom_state->pv_ramdisk.path = "";
          break;
      case LIBXL_STUBDOMAIN_VERSION_LINUX:
@@ -312,7 +312,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      libxl__store_libxl_entry(gc, guest_domid, "dm-version",
          libxl_device_model_version_to_string(dm_config->b_info.device_model_version));
      libxl__store_libxl_entry(gc, dm_domid, "stubdom-version",
-@@ -1530,6 +1580,11 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+@@ -1530,6 +1566,11 @@ void libxl__spawn_stub_dm(libxl__egc *eg
                                         libxl__xs_get_dompath(gc, guest_domid)),
                          "%s",
                          libxl_bios_type_to_string(LIBXL_BIOS_TYPE_SEABIOS));
@@ -324,7 +324,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      }
      ret = xc_domain_set_target(ctx->xch, dm_domid, guest_domid);
      if (ret<0) {
-@@ -1557,12 +1612,15 @@ retry_transaction:
+@@ -1557,12 +1598,15 @@ retry_transaction:
          if (errno == EAGAIN)
              goto retry_transaction;
  
@@ -344,7 +344,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      libxl__add_disks(egc, ao, dm_domid, dm_config, &sdss->multidev);
      libxl__multidev_prepared(egc, &sdss->multidev, 0);
  
-@@ -1578,7 +1636,6 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1578,7 +1622,6 @@ static void spawn_stub_launch_dm(libxl__
  {
      libxl__stub_dm_spawn_state *sdss = CONTAINER_OF(multidev, *sdss, multidev);
      STATE_AO_GC(sdss->dm.spawn.ao);
@@ -352,7 +352,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      int i, num_console = STUBDOM_SPECIAL_CONSOLES;
      libxl__device_console *console;
  
-@@ -1623,21 +1680,16 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1623,21 +1666,16 @@ static void spawn_stub_launch_dm(libxl__
      for (i = 0; i < num_console; i++) {
          libxl__device device;
          console[i].devid = i;
@@ -378,7 +378,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
                  break;
              case STUBDOM_CONSOLE_SAVE:
                  if (guest_config->b_info.stubdomain_version
-@@ -1671,6 +1723,12 @@ static void spawn_stub_launch_dm(libxl__
+@@ -1671,6 +1709,12 @@ static void spawn_stub_launch_dm(libxl__
      sdss->pvqemu.build_state = &sdss->dm_state;
      sdss->pvqemu.callback = spawn_stubdom_pvqemu_cb;
  
@@ -391,7 +391,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
      libxl__spawn_local_dm(egc, &sdss->pvqemu);
  
      return;
-@@ -1704,42 +1762,6 @@ out:
+@@ -1704,42 +1748,6 @@ out:
      stubdom_pvqemu_cb(egc, &sdss->multidev, rc);
  }
  
@@ -434,7 +434,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
  static void stubdom_pvqemu_cb(libxl__egc *egc,
                                libxl__multidev *multidev,
                                int rc)
-@@ -1747,7 +1769,6 @@ static void stubdom_pvqemu_cb(libxl__egc
+@@ -1747,7 +1755,6 @@ static void stubdom_pvqemu_cb(libxl__egc
      libxl__stub_dm_spawn_state *sdss = CONTAINER_OF(multidev, *sdss, multidev);
      STATE_AO_GC(sdss->dm.spawn.ao);
      uint32_t dm_domid = sdss->pvqemu.guest_domid;
@@ -442,7 +442,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
  
      libxl__xswait_init(&sdss->xswait);
  
-@@ -1756,16 +1777,7 @@ static void stubdom_pvqemu_cb(libxl__egc
+@@ -1756,16 +1763,7 @@ static void stubdom_pvqemu_cb(libxl__egc
          goto out;
      }
  
@@ -460,7 +460,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
  
      rc = libxl_domain_unpause(CTX, dm_domid);
      if (rc) goto out;
-@@ -1883,6 +1895,11 @@ void libxl__spawn_local_dm(libxl__egc *e
+@@ -1883,6 +1881,11 @@ void libxl__spawn_local_dm(libxl__egc *e
                          b_info->device_model_version==LIBXL_DEVICE_MODEL_VERSION_QEMU_XEN_TRADITIONAL &&
                          !libxl__vnuma_configured(b_info));
          free(path);
@@ -544,7 +544,17 @@ Index: xen-4.6.1/tools/libxl/libxl_internal.h
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl_internal.h
 +++ xen-4.6.1/tools/libxl/libxl_internal.h
-@@ -112,6 +112,9 @@
+@@ -52,6 +52,9 @@
+ #include <xenctrl.h>
+ #include <xenguest.h>
+ 
++/* OpenXT: we use syslog */
++#include <syslog.h>
++
+ #include "xentoollog.h"
+ 
+ #include <xen/io/xenbus.h>
+@@ -112,6 +115,9 @@
  #define TAP_DEVICE_SUFFIX "-emu"
  #define DOMID_XS_PATH "domid"
  
@@ -554,3 +564,93 @@ Index: xen-4.6.1/tools/libxl/libxl_internal.h
  #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
  
  #define ROUNDUP(_val, _order)                                           \
+Index: xen-4.6.1/tools/libxl/libxl_internal.c
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl_internal.c
++++ xen-4.6.1/tools/libxl/libxl_internal.c
+@@ -199,6 +199,34 @@ char *libxl__dirname(libxl__gc *gc, cons
+     return libxl__strndup(gc, s, c - s);
+ }
+ 
++static int xtl_level_to_syslog_level(xentoollog_level x)
++{
++    int s;
++
++    switch(x) {
++    case XTL_DEBUG:
++        s = LOG_DEBUG;
++        break;
++    case XTL_NOTICE:
++        s = LOG_NOTICE;
++        break;
++    case XTL_WARN:
++        s = LOG_WARNING;
++        break;
++    case XTL_ERROR:
++        s = LOG_ERR;
++        break;
++    case XTL_CRITICAL:
++        s = LOG_CRIT;
++        break;
++    default:
++        s = LOG_INFO;
++        break;
++    }
++
++    return s;
++}
++
+ void libxl__logv(libxl_ctx *ctx, xentoollog_level msglevel, int errnoval,
+              const char *file, int line, const char *func,
+              const char *fmt, va_list ap)
+@@ -221,10 +249,14 @@ void libxl__logv(libxl_ctx *ctx, xentool
+     fileline[sizeof(fileline)-1] = 0;
+ 
+  x:
+-    xtl_log(ctx->lg, msglevel, errnoval, "libxl",
+-            "%s%s%s%s" "%s",
+-            fileline, func&&file?":":"", func?func:"", func||file?": ":"",
+-            base);
++    /* xtl_log(ctx->lg, msglevel, errnoval, "libxl", */
++    /*         "%s%s%s%s" "%s", */
++    /*         fileline, func&&file?":":"", func?func:"", func||file?": ":"", */
++    /*         base); */
++    /* OpenXT: we use syslog */
++    syslog(LOG_USER | xtl_level_to_syslog_level(msglevel), "%s%s%s%s%s",
++           fileline, func&&file?":":"", func?func:"", func||file?": ":"", base);
++
+     if (base != enomem) free(base);
+     errno = esave;
+ }
+Index: xen-4.6.1/tools/libxl/xl.c
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/xl.c
++++ xen-4.6.1/tools/libxl/xl.c
+@@ -28,6 +28,9 @@
+ #include <inttypes.h>
+ #include <regex.h>
+ 
++/* OpenXT: we use syslog */
++#include <syslog.h>
++
+ #include "libxl.h"
+ #include "libxl_utils.h"
+ #include "libxlutil.h"
+@@ -291,6 +294,8 @@ static void xl_ctx_free(void)
+         free(lockfile);
+         lockfile = NULL;
+     }
++    /* OpenXT: we use syslog */
++    closelog();
+ }
+ 
+ int main(int argc, char **argv)
+@@ -333,6 +338,8 @@ int main(int argc, char **argv)
+     logger = xtl_createlogger_stdiostream(stderr, minmsglevel,
+         (progress_use_cr ? XTL_STDIOSTREAM_PROGRESS_USE_CR : 0));
+     if (!logger) exit(1);
++    /* OpenXT: we use syslog, we could probably comment out the above. */
++    openlog("xl", LOG_CONS, LOG_USER);
+ 
+     atexit(xl_ctx_free);
+ 
