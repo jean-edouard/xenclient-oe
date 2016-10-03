@@ -275,7 +275,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
  
      if (sdl && !is_stubdom) {
          flexarray_append(dm_args, "-sdl");
-@@ -1312,7 +1336,7 @@ static int libxl__write_stub_dmargs(libx
+@@ -1314,7 +1338,7 @@ static int libxl__write_stub_dmargs(libx
      while (args[i] != NULL) {
          if (linux_stubdom ||
              (strcmp(args[i], "-sdl") &&
