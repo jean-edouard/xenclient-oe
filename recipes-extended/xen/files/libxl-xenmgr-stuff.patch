@@ -438,7 +438,7 @@ Index: xen-4.6.1/tools/libxl/libxl_utils.c
  int libxl_domain_qualifier_to_domid(libxl_ctx *ctx, const char *name,
                                      uint32_t *domid)
  {
-@@ -1195,6 +1253,102 @@ int libxl_domid_valid_guest(uint32_t dom
+@@ -1195,6 +1253,96 @@ int libxl_domid_valid_guest(uint32_t dom
      return domid > 0 && domid < DOMID_FIRST_RESERVED;
  }
  
@@ -448,16 +448,13 @@ Index: xen-4.6.1/tools/libxl/libxl_utils.c
 +	char uuid[37];
 +	libxl_dominfo domain;
 +
-+	xs_transaction_t t = 0;
 +	libxl_domain_info(ctx, &domain, domid);
 +
 +	uuid_unparse(domain.uuid.uuid, uuid);
-+	t = xs_transaction_start(ctx->xsh);
 +	sprintf(path, "/state/%s/reboot", uuid);    
 +
-+	*state = xs_read(ctx->xsh, t, path, NULL);
++	*state = xs_read(ctx->xsh, XBT_NULL, path, NULL);
 +
-+	xs_transaction_end(ctx->xsh, t, 0);
 +	return 0;
 +}
 +
@@ -466,19 +463,16 @@ Index: xen-4.6.1/tools/libxl/libxl_utils.c
 +	char path[49];
 +	char uuid[37];
 +	libxl_dominfo domain;
-+	xs_transaction_t t = 0;
 +
 +	libxl_domain_info(ctx, &domain, domid);
 +	uuid_unparse(domain.uuid.uuid, uuid);
 +
-+	t = xs_transaction_start(ctx->xsh);
 +	sprintf(path, "/state/%s/reboot", uuid);
 +	if(reboot)
-+	   xs_write(ctx->xsh, t, path, "1", strlen("1"));
++	   xs_write(ctx->xsh, XBT_NULL, path, "1", strlen("1"));
 +	else
-+	   xs_rm(ctx->xsh, t, path); 
++	   xs_rm(ctx->xsh, XBT_NULL, path); 
 +
-+	xs_transaction_end(ctx->xsh, t, 0);
 +	return 0;
 +}
 +
