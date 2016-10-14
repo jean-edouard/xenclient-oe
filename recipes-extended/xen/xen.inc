@@ -69,6 +69,7 @@ SRC_URI = "${XEN_SRC_URI};name=source \
     file://libxl-vif-make-ioemu-and-stubdom-mac-addresses-configurable.patch \
     file://libxl-openxt-specific-changes.patch \
     file://libxl-xenmgr-stuff.patch \
+    file://libxl-stubdom-options.patch \
 "
 
 SRC_URI[source.md5sum] := "${XEN_SRC_MD5SUM}"
