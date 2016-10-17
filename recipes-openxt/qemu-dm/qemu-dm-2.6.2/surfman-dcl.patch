@@ -818,7 +818,7 @@ Index: qemu-2.6.2/vl.c
 =======
 --- qemu-1.4.0.orig/vl.c
 +++ qemu-1.4.0/vl.c
-@@ -182,7 +184,7 @@ int main(int argc, char **argv)
+@@ -182,7 +182,7 @@ int main(int argc, char **argv)
  static const char *data_dir;
 >>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
  const char *bios_name = NULL;
@@ -834,7 +834,7 @@ Index: qemu-2.6.2/vl.c
 =======
  const char* keyboard_layout = NULL;
  ram_addr_t ram_size;
-@@ -2207,6 +2214,13 @@ static DisplayType select_display(const
+@@ -2207,6 +2207,13 @@ static DisplayType select_display(const
          fprintf(stderr, "Curses support is disabled\n");
 >>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
          exit(1);
@@ -850,10 +850,14 @@ Index: qemu-2.6.2/vl.c
          display = DT_NONE;
      } else {
 <<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
+<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 @@ -4590,9 +4597,12 @@ int main(int argc, char **argv, char **e
          gtk_display_init(ds, full_screen, grab_on_hover);
 =======
 @@ -4256,9 +4282,12 @@ int main(int argc, char **argv, char **e
+=======
+@@ -4256,9 +4263,12 @@ int main(int argc, char **argv, char **e
+>>>>>>> Deinit xen-input as well as surfman:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
          cocoa_display_init(ds, full_screen);
 >>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
          break;
@@ -869,6 +873,7 @@ Index: qemu-2.6.2/vl.c
          break;
      }
 <<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
+<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 Index: qemu-2.6.2/xen-hvm.c
 ===================================================================
 --- qemu-2.6.2.orig/xen-hvm.c
@@ -876,11 +881,15 @@ Index: qemu-2.6.2/xen-hvm.c
 @@ -40,7 +40,21 @@
 =======
 @@ -4332,6 +4361,9 @@ int main(int argc, char **argv, char **e
+=======
+@@ -4332,7 +4342,10 @@ int main(int argc, char **argv, char **e
+>>>>>>> Deinit xen-input as well as surfman:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
  
      resume_all_vcpus();
      main_loop();
 +#if defined(CONFIG_SURFMAN)
-+    surfman_display_deinit(ds);
+ 	xen_input_deinit();
++	surfman_display_deinit(ds);
 +#endif
      bdrv_close_all();
      pause_all_vcpus();
