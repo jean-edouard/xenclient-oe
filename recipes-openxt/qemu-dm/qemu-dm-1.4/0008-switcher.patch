@@ -62,9 +62,9 @@ PATCHES
 
 Index: qemu-1.4.0/include/sysemu/sysemu.h
 ===================================================================
---- qemu-1.4.0.orig/include/sysemu/sysemu.h	2016-05-10 15:50:20.510486780 +0200
-+++ qemu-1.4.0/include/sysemu/sysemu.h	2016-05-10 15:51:55.939525029 +0200
-@@ -91,6 +91,7 @@
+--- qemu-1.4.0.orig/include/sysemu/sysemu.h
++++ qemu-1.4.0/include/sysemu/sysemu.h
+@@ -91,6 +91,7 @@ typedef enum DisplayType
      DT_SDL,
      DT_NOGRAPHIC,
      DT_NONE,
@@ -74,9 +74,9 @@ Index: qemu-1.4.0/include/sysemu/sysemu.h
  extern int autostart;
 Index: qemu-1.4.0/include/ui/console.h
 ===================================================================
---- qemu-1.4.0.orig/include/ui/console.h	2016-05-10 15:50:20.523819979 +0200
-+++ qemu-1.4.0/include/ui/console.h	2016-05-10 15:51:56.026190822 +0200
-@@ -59,6 +59,7 @@
+--- qemu-1.4.0.orig/include/ui/console.h
++++ qemu-1.4.0/include/ui/console.h
+@@ -59,6 +59,7 @@ void qemu_remove_led_event_handler(QEMUP
  void kbd_put_keycode(int keycode);
  void kbd_put_ledstate(int ledstate);
  void kbd_mouse_event(int dx, int dy, int dz, int buttons_state);
@@ -86,9 +86,9 @@ Index: qemu-1.4.0/include/ui/console.h
  int kbd_mouse_is_absolute(void);
 Index: qemu-1.4.0/ui/Makefile.objs
 ===================================================================
---- qemu-1.4.0.orig/ui/Makefile.objs	2016-05-10 15:50:20.557152977 +0200
-+++ qemu-1.4.0/ui/Makefile.objs	2016-05-10 15:51:56.092856816 +0200
-@@ -13,6 +13,7 @@
+--- qemu-1.4.0.orig/ui/Makefile.objs
++++ qemu-1.4.0/ui/Makefile.objs
+@@ -13,6 +13,7 @@ common-obj-$(CONFIG_SDL) += sdl.o sdl_zo
  common-obj-$(CONFIG_COCOA) += cocoa.o
  common-obj-$(CONFIG_CURSES) += curses.o
  common-obj-$(CONFIG_VNC) += $(vnc-obj-y)
@@ -98,9 +98,9 @@ Index: qemu-1.4.0/ui/Makefile.objs
  
 Index: qemu-1.4.0/ui/input.c
 ===================================================================
---- qemu-1.4.0.orig/ui/input.c	2016-05-10 15:50:20.540486478 +0200
-+++ qemu-1.4.0/ui/input.c	2016-05-10 15:51:56.159522810 +0200
-@@ -447,6 +447,30 @@
+--- qemu-1.4.0.orig/ui/input.c
++++ qemu-1.4.0/ui/input.c
+@@ -447,6 +447,30 @@ void kbd_mouse_event(int dx, int dy, int
      }
  }
  
@@ -133,9 +133,9 @@ Index: qemu-1.4.0/ui/input.c
      if (QTAILQ_EMPTY(&mouse_handlers)) {
 Index: qemu-1.4.0/ui/xen-input.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ qemu-1.4.0/ui/xen-input.c	2016-05-10 15:51:56.226188806 +0200
-@@ -0,0 +1,492 @@
+--- /dev/null
++++ qemu-1.4.0/ui/xen-input.c
+@@ -0,0 +1,497 @@
 +#include <linux/input.h>
 +#include <stdlib.h>
 +#include "ui/console.h"
@@ -568,6 +568,11 @@ Index: qemu-1.4.0/ui/xen-input.c
 +    .input_wakeup = xen_input_wakeup,
 +};
 +
++void xen_input_deinit(void)
++{
++	dmbus_service_disconnect(input.service);
++}
++
 +void xen_input_init(void)
 +{
 +    printf("initialize input\n");
@@ -630,15 +635,16 @@ Index: qemu-1.4.0/ui/xen-input.c
 +}
 Index: qemu-1.4.0/ui/xen-input.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ qemu-1.4.0/ui/xen-input.h	2016-05-10 15:51:56.309521300 +0200
-@@ -0,0 +1,30 @@
+--- /dev/null
++++ qemu-1.4.0/ui/xen-input.h
+@@ -0,0 +1,31 @@
 +#ifndef UI_XEN_INPUT_H_
 +# define UI_XEN_INPUT_H_
 +
 +# include "xen-dmbus.h"
 +
 +void xen_input_init(void);
++void xen_input_deinit(void);
 +void xen_input_abs_enabled(int enabled);
 +
 +typedef void (*xen_input_direct_event_cb_t)(void *opaque,
@@ -665,9 +671,9 @@ Index: qemu-1.4.0/ui/xen-input.h
 +#endif /* !UI_XEN_INPUT_H_ */
 Index: qemu-1.4.0/vl.c
 ===================================================================
---- qemu-1.4.0.orig/vl.c	2016-05-10 15:50:20.573819474 +0200
-+++ qemu-1.4.0/vl.c	2016-05-10 15:51:56.366187394 +0200
-@@ -169,6 +169,7 @@
+--- qemu-1.4.0.orig/vl.c
++++ qemu-1.4.0/vl.c
+@@ -169,6 +169,7 @@ int main(int argc, char **argv)
  
  #include "ui/qemu-spice.h"
  #include "qapi/string-input-visitor.h"
@@ -675,7 +681,7 @@ Index: qemu-1.4.0/vl.c
  
  //#define DEBUG_NET
  //#define DEBUG_SLIRP
-@@ -181,7 +182,7 @@
+@@ -181,7 +182,7 @@ int main(int argc, char **argv)
  static const char *data_dir;
  const char *bios_name = NULL;
  enum vga_retrace_method vga_retrace_method = VGA_RETRACE_DUMB;
@@ -684,7 +690,7 @@ Index: qemu-1.4.0/vl.c
  static int display_remote;
  const char* keyboard_layout = NULL;
  ram_addr_t ram_size;
-@@ -4255,6 +4256,9 @@
+@@ -4255,6 +4256,9 @@ int main(int argc, char **argv, char **e
          cocoa_display_init(ds, full_screen);
          break;
  #endif
@@ -694,3 +700,11 @@ Index: qemu-1.4.0/vl.c
      default:
          break;
      }
+@@ -4328,6 +4332,7 @@ int main(int argc, char **argv, char **e
+ 
+     resume_all_vcpus();
+     main_loop();
++	xen_input_deinit();
+     bdrv_close_all();
+     pause_all_vcpus();
+     res_free();
