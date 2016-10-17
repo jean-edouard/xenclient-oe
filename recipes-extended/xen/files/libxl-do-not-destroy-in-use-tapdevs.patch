@@ -1,3 +1,41 @@
+################################################################################
+SHORT DESCRIPTION:
+################################################################################
+Keep alive tapdevs that are in use by other VMs
+
+################################################################################
+LONG DESCRIPTION:
+################################################################################
+When creating a VM that needs a tapdev for a given disk, LibXL will first check
+if one already exists, and in that case will use it instead of creating a new
+one.
+However, without this patch, when destroying a VM, LibXL will destroy the tapdev
+without first checking if any other VM is using it.
+This patch adds that missing check.
+
+################################################################################
+CHANGELOG
+################################################################################
+Authors:
+Jed Lejosne <lejosnej@ainfosec.com>
+
+################################################################################
+REMOVAL
+################################################################################
+If the problem gets solved upstream, we should remove this patch
+
+################################################################################
+UPSTREAM PLAN
+################################################################################
+We should try to upstream this.
+
+################################################################################
+INTERNAL DEPENDENCIES
+################################################################################
+
+################################################################################
+PATCHES
+################################################################################
 Index: xen-4.6.1/tools/libxl/libxl_blktap2.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl_blktap2.c
