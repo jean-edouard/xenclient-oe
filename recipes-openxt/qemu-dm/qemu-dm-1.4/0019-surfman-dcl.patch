@@ -88,9 +88,9 @@ PATCHES
 
 Index: qemu-1.4.0/configure
 ===================================================================
---- qemu-1.4.0.orig/configure	2015-05-05 15:17:10.082042224 -0400
-+++ qemu-1.4.0/configure	2015-05-05 15:17:44.618536310 -0400
-@@ -227,6 +227,7 @@
+--- qemu-1.4.0.orig/configure
++++ qemu-1.4.0/configure
+@@ -227,6 +227,7 @@ libiscsi=""
  coroutine=""
  seccomp=""
  glusterfs=""
@@ -98,7 +98,7 @@ Index: qemu-1.4.0/configure
  virtio_blk_data_plane=""
  stubdom="no"
  atapipt="no"
-@@ -922,6 +923,10 @@
+@@ -922,6 +923,10 @@ for opt do
    ;;
    --disable-openxt-stubdom) stubdom="no"
    ;;
@@ -109,7 +109,7 @@ Index: qemu-1.4.0/configure
    *) echo "ERROR: unknown option $opt"; show_help="yes"
    ;;
    esac
-@@ -3398,6 +3403,7 @@
+@@ -3398,6 +3403,7 @@ echo "seccomp support   $seccomp"
  echo "coroutine backend $coroutine_backend"
  echo "GlusterFS support $glusterfs"
  echo "virtio-blk-data-plane $virtio_blk_data_plane"
@@ -117,7 +117,7 @@ Index: qemu-1.4.0/configure
  echo "gcov              $gcov_tool"
  echo "gcov enabled      $gcov"
  echo "OpenXT Stubdomain support   $stubdom"
-@@ -3820,6 +3826,12 @@
+@@ -3820,6 +3826,12 @@ if test "$trace_default" = "yes"; then
    echo "CONFIG_TRACE_DEFAULT=y" >> $config_host_mak
  fi
  
@@ -132,9 +132,9 @@ Index: qemu-1.4.0/configure
  echo "MAKE=$make" >> $config_host_mak
 Index: qemu-1.4.0/hw/xen.h
 ===================================================================
---- qemu-1.4.0.orig/hw/xen.h	2015-05-05 15:17:44.578539701 -0400
-+++ qemu-1.4.0/hw/xen.h	2015-05-05 15:17:44.618536310 -0400
-@@ -54,6 +54,8 @@
+--- qemu-1.4.0.orig/hw/xen.h
++++ qemu-1.4.0/hw/xen.h
+@@ -54,6 +54,8 @@ void xen_modified_memory(ram_addr_t star
  
  struct MemoryRegion;
  void xen_register_framebuffer(struct MemoryRegion *mr);
@@ -145,9 +145,9 @@ Index: qemu-1.4.0/hw/xen.h
  #  define HVM_MAX_VCPUS 32
 Index: qemu-1.4.0/include/sysemu/sysemu.h
 ===================================================================
---- qemu-1.4.0.orig/include/sysemu/sysemu.h	2015-05-05 15:11:49.498537328 -0400
-+++ qemu-1.4.0/include/sysemu/sysemu.h	2015-05-05 15:17:44.618536310 -0400
-@@ -90,8 +90,8 @@
+--- qemu-1.4.0.orig/include/sysemu/sysemu.h
++++ qemu-1.4.0/include/sysemu/sysemu.h
+@@ -90,8 +90,8 @@ typedef enum DisplayType
      DT_CURSES,
      DT_SDL,
      DT_NOGRAPHIC,
@@ -157,7 +157,7 @@ Index: qemu-1.4.0/include/sysemu/sysemu.h
  } DisplayType;
  
  extern int autostart;
-@@ -104,6 +104,7 @@
+@@ -104,6 +104,7 @@ typedef enum {
  extern int vga_interface_type;
  #define xenfb_enabled (vga_interface_type == VGA_XENFB)
  #define qxl_enabled (vga_interface_type == VGA_QXL)
@@ -167,15 +167,16 @@ Index: qemu-1.4.0/include/sysemu/sysemu.h
  extern int graphic_height;
 Index: qemu-1.4.0/include/ui/console.h
 ===================================================================
---- qemu-1.4.0.orig/include/ui/console.h	2015-05-05 15:17:44.578539701 -0400
-+++ qemu-1.4.0/include/ui/console.h	2015-05-05 15:17:44.618536310 -0400
-@@ -501,6 +501,11 @@
+--- qemu-1.4.0.orig/include/ui/console.h
++++ qemu-1.4.0/include/ui/console.h
+@@ -501,6 +501,12 @@ static inline int vnc_display_pw_expire(
  };
  #endif
  
 +#ifdef CONFIG_SURFMAN
 +/* surfman.c */
 +void surfman_display_init(DisplayState *ds);
++void surfman_display_deinit(DisplayState *ds);
 +#endif
 +
  /* curses.c */
@@ -183,9 +184,9 @@ Index: qemu-1.4.0/include/ui/console.h
  
 Index: qemu-1.4.0/ui/Makefile.objs
 ===================================================================
---- qemu-1.4.0.orig/ui/Makefile.objs	2015-05-05 15:11:49.498537328 -0400
-+++ qemu-1.4.0/ui/Makefile.objs	2015-05-05 15:17:44.618536310 -0400
-@@ -14,6 +14,7 @@
+--- qemu-1.4.0.orig/ui/Makefile.objs
++++ qemu-1.4.0/ui/Makefile.objs
+@@ -14,6 +14,7 @@ common-obj-$(CONFIG_COCOA) += cocoa.o
  common-obj-$(CONFIG_CURSES) += curses.o
  common-obj-$(CONFIG_VNC) += $(vnc-obj-y)
  common-obj-$(CONFIG_XEN) += xen-input.o
@@ -195,9 +196,9 @@ Index: qemu-1.4.0/ui/Makefile.objs
  
 Index: qemu-1.4.0/ui/console.c
 ===================================================================
---- qemu-1.4.0.orig/ui/console.c	2015-05-05 15:03:42.854660343 -0400
-+++ qemu-1.4.0/ui/console.c	2015-05-05 15:17:44.618536310 -0400
-@@ -1676,15 +1676,17 @@
+--- qemu-1.4.0.orig/ui/console.c
++++ qemu-1.4.0/ui/console.c
+@@ -1676,15 +1676,17 @@ PixelFormat qemu_default_pixelformat(int
              pf.bbits = 5;
              break;
          case 16:
@@ -221,9 +222,9 @@ Index: qemu-1.4.0/ui/console.c
              pf.bbits = 5;
 Index: qemu-1.4.0/ui/surfman.c
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ qemu-1.4.0/ui/surfman.c	2015-05-05 15:17:44.622534572 -0400
-@@ -0,0 +1,363 @@
+--- /dev/null
++++ qemu-1.4.0/ui/surfman.c
+@@ -0,0 +1,368 @@
 +/*
 + * QEMU graphical console
 + *
@@ -533,6 +534,11 @@ Index: qemu-1.4.0/ui/surfman.c
 +    .reconnect = surfman_on_reconnect
 +};
 +
++void surfman_display_deinit(DisplayState *ds)
++{
++    dmbus_service_disconnect(ss->dmbus_service);
++}
++
 +/**
 + * Initializes a Surfman multiplexed display, creating the DisplayChangeListener object
 + * that tracks display events.
@@ -589,8 +595,8 @@ Index: qemu-1.4.0/ui/surfman.c
 +
 Index: qemu-1.4.0/ui/surfman.h
 ===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ qemu-1.4.0/ui/surfman.h	2015-05-05 15:17:44.622534572 -0400
+--- /dev/null
++++ qemu-1.4.0/ui/surfman.h
 @@ -0,0 +1,118 @@
 +#ifndef _SURFMAN_H_
 +# define _SURFMAN_H_
@@ -712,9 +718,9 @@ Index: qemu-1.4.0/ui/surfman.h
 +
 Index: qemu-1.4.0/vl.c
 ===================================================================
---- qemu-1.4.0.orig/vl.c	2015-05-05 15:11:49.498537328 -0400
-+++ qemu-1.4.0/vl.c	2015-05-05 15:17:44.622534572 -0400
-@@ -182,7 +182,7 @@
+--- qemu-1.4.0.orig/vl.c
++++ qemu-1.4.0/vl.c
+@@ -182,7 +184,7 @@ int main(int argc, char **argv)
  static const char *data_dir;
  const char *bios_name = NULL;
  enum vga_retrace_method vga_retrace_method = VGA_RETRACE_DUMB;
@@ -723,7 +729,7 @@ Index: qemu-1.4.0/vl.c
  static int display_remote;
  const char* keyboard_layout = NULL;
  ram_addr_t ram_size;
-@@ -2207,6 +2207,13 @@
+@@ -2207,6 +2214,13 @@ static DisplayType select_display(const
          fprintf(stderr, "Curses support is disabled\n");
          exit(1);
  #endif
@@ -737,7 +743,7 @@ Index: qemu-1.4.0/vl.c
      } else if (strstart(p, "none", &opts)) {
          display = DT_NONE;
      } else {
-@@ -4256,9 +4263,12 @@
+@@ -4256,9 +4282,12 @@ int main(int argc, char **argv, char **e
          cocoa_display_init(ds, full_screen);
          break;
  #endif
@@ -751,10 +757,20 @@ Index: qemu-1.4.0/vl.c
      default:
          break;
      }
+@@ -4332,6 +4361,9 @@ int main(int argc, char **argv, char **e
+ 
+     resume_all_vcpus();
+     main_loop();
++#if defined(CONFIG_SURFMAN)
++    surfman_display_deinit(ds);
++#endif
+     bdrv_close_all();
+     pause_all_vcpus();
+     res_free();
 Index: qemu-1.4.0/xen-all.c
 ===================================================================
---- qemu-1.4.0.orig/xen-all.c	2015-05-05 15:11:49.514536700 -0400
-+++ qemu-1.4.0/xen-all.c	2015-05-05 15:17:44.622534572 -0400
+--- qemu-1.4.0.orig/xen-all.c
++++ qemu-1.4.0/xen-all.c
 @@ -37,7 +37,21 @@
  #endif
  
@@ -777,7 +793,7 @@ Index: qemu-1.4.0/xen-all.c
  static bool xen_in_migration;
  
  /* Compatibility with older version */
-@@ -319,10 +333,14 @@
+@@ -319,10 +333,14 @@ go_physmap:
  
      QLIST_INSERT_HEAD(&state->physmap, physmap, list);
  
@@ -793,7 +809,7 @@ Index: qemu-1.4.0/xen-all.c
  
      snprintf(path, sizeof(path),
              "/local/domain/0/device-model/%d/physmap/%"PRIx64"/start_addr",
-@@ -1210,9 +1228,86 @@
+@@ -1210,9 +1228,86 @@ void destroy_hvm_domain(bool reboot)
      }
  }
  
