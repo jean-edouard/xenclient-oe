@@ -1,0 +1,63 @@
+################################################################################
+SHORT DESCRIPTION:
+################################################################################
+On system reset, exit qemu in the stubdom.
+
+################################################################################
+LONG DESCRIPTION:
+################################################################################
+The libxl toolstack uprev has cleaned up several parts of the stubdom, including
+OpenXT's reliance on the qemu process in the stubdom to crash. In the domain
+reboot case, qemu receives a reset signal and continues executing the main loop.
+However, we end up destroying the stubdom anyway, which ultimately prevents 
+dmbus from properly closing the connections to surfman and inputserver,
+resulting in an unreleased, dead domain.
+
+This patch modifies the system reset handling code so that we simply exit the
+main loop as if qemu received a shutdown request, allowing surfman and input
+to disconnect their dmbus connections.
+
+################################################################################
+CHANGELOG
+################################################################################
+Created: Chris Rogers, rogersc@ainfosec.com, 18/10/2016
+
+################################################################################
+REMOVAL
+################################################################################
+This patch is required by libxl.
+
+################################################################################
+UPSTREAM PLAN
+################################################################################
+This is OpenXT specific. There is no plan to upstream this patch.
+
+################################################################################
+INTERNAL DEPENDENCIES
+################################################################################
+
+################################################################################
+PATCHES
+################################################################################
+
+Index: qemu-1.4.0/vl.c
+===================================================================
+--- qemu-1.4.0.orig/vl.c
++++ qemu-1.4.0/vl.c
+@@ -1970,13 +1970,9 @@ static bool main_loop_should_exit(void)
+     }
+     if (qemu_reset_requested()) {
+         pause_all_vcpus();
+-        cpu_synchronize_all_states();
+-        qemu_system_reset(VMRESET_REPORT);
+-        resume_all_vcpus();
+-        if (runstate_check(RUN_STATE_INTERNAL_ERROR) ||
+-            runstate_check(RUN_STATE_SHUTDOWN)) {
+-            runstate_set(RUN_STATE_PAUSED);
+-        }
++		//Stubdom will be destroyed anyway, just exit the main loop cleanly
++		monitor_protocol_event(QEVENT_SHUTDOWN, NULL);
++		return true;
+     }
+     if (qemu_wakeup_requested()) {
+         pause_all_vcpus();
