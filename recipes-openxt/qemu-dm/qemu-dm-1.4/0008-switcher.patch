@@ -570,7 +570,7 @@ Index: qemu-1.4.0/ui/xen-input.c
 +
 +void xen_input_deinit(void)
 +{
-+	dmbus_service_disconnect(input.service);
++    dmbus_service_disconnect(input.service);
 +}
 +
 +void xen_input_init(void)
@@ -704,7 +704,7 @@ Index: qemu-1.4.0/vl.c
  
      resume_all_vcpus();
      main_loop();
-+	xen_input_deinit();
++    xen_input_deinit();
      bdrv_close_all();
      pause_all_vcpus();
      res_free();

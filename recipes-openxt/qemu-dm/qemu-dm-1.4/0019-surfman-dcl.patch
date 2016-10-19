@@ -762,8 +762,8 @@ Index: qemu-1.4.0/vl.c
      resume_all_vcpus();
      main_loop();
 +#if defined(CONFIG_SURFMAN)
- 	xen_input_deinit();
-+	surfman_display_deinit(ds);
+     xen_input_deinit();
++    surfman_display_deinit(ds);
 +#endif
      bdrv_close_all();
      pause_all_vcpus();
