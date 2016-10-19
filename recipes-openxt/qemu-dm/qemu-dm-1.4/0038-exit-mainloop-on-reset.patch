@@ -55,9 +55,9 @@ Index: qemu-1.4.0/vl.c
 -            runstate_check(RUN_STATE_SHUTDOWN)) {
 -            runstate_set(RUN_STATE_PAUSED);
 -        }
-+		//Stubdom will be destroyed anyway, just exit the main loop cleanly
-+		monitor_protocol_event(QEVENT_SHUTDOWN, NULL);
-+		return true;
++        //Stubdom will be destroyed anyway, just exit the main loop cleanly
++        monitor_protocol_event(QEVENT_SHUTDOWN, NULL);
++        return true;
      }
      if (qemu_wakeup_requested()) {
          pause_all_vcpus();
