@@ -117,6 +117,15 @@ Index: xen-4.6.1/tools/libxl/libxl.c
      rc = 0;
  out:
      return rc;
+@@ -6750,7 +6783,7 @@ int libxl_retrieve_domain_configuration(
+                     break;                                              \
+             }                                                           \
+                                                                         \
+-            if (j < num) {         /* found in xenstore */              \
++            if (j < num || !strcmp(#type, "nic")) {  /* found in xenstore */ \
+                 libxl_device_##type *dst, *src;                         \
+                 dst = q;                                                \
+                 src = &p[j];                                            \
 Index: xen-4.6.1/tools/libxl/libxl.h
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl.h
