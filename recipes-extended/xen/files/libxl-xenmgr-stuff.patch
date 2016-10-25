@@ -6,7 +6,28 @@ LibXL modifications for Xenmgr interactions
 ################################################################################
 LONG DESCRIPTION:
 ################################################################################
-TODO
+This patch contains several changes to xl for it to work on the OpenXT platform
+with Xenmgr as the top level toolstack piece. Changes are described below:
+
+* Introduce domain lifecycle state updates. OpenXT maintains domain state beyond
+  the basic Xen states for a domain (such as 'Starting', 'Rebooting', etc). Only
+  Xl knows when we reach these states, upon which it informs Xenmgr, like Xenvm
+  did. Also implements some helper functions to support this feature.
+* Implement sleep and hibernate in xl for PV domains.
+* Support passing a crypto key directory for a guest's disk(s). Otherwise uses
+  platform default path
+* Write OpenXT platform specific xenstore values for domains.
+* Rework vkb/vfb initialization to support adding them separately for domains
+  that don't require both.
+* New config option 'dm_display' to support different display managers. Defaults
+  to surfman.
+* Changed some qemu options to conform to OpenXT.
+* Implemented some functions for the xl command line tool to help xenmgr. For
+  example, converting a uuid to domid, the primary method by which xenmgr ids
+  domains.
+* Modified how xl handles domain reboots. Xen doesn't implement the hvm
+  reset signal, so when a reboot comes from the toolstack, we send a shutdown
+  and note that we're rebooting.
 
 ################################################################################
 CHANGELOG
