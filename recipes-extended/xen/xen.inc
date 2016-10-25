@@ -69,6 +69,11 @@ SRC_URI = "${XEN_SRC_URI};name=source \
     file://libxl-RFC-fixes.patch \
     file://libxl-misc-fixes.patch \
     file://libxl-vif-make-ioemu-and-stubdom-mac-addresses-configurable.patch \
+    file://libxl-linux-stubdom-replace-disk-with-initramfs.patch \
+    file://libxl-openxt-helpers.patch \
+    file://libxl-openxt-qemu-args.patch \
+    file://libxl-openxt-xci-cpuid-signature.patch \
+    file://libxl-pass-qemu-options-through-linux-stubdom-cmdline.patch \
     file://libxl-openxt-specific-changes.patch \
     file://libxl-domain-state.patch \
     file://libxl-fixup-cmdline-ops.patch \
