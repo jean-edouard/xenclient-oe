@@ -260,7 +260,7 @@ Index: xen-4.6.1/tools/libxl/libxl_internal.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl_internal.c
 +++ xen-4.6.1/tools/libxl/libxl_internal.c
-@@ -382,6 +382,28 @@ int libxl__device_model_version_running(
+@@ -414,6 +414,28 @@ int libxl__device_model_version_running(
      return value;
  }
  
@@ -293,7 +293,7 @@ Index: xen-4.6.1/tools/libxl/libxl_internal.h
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl_internal.h
 +++ xen-4.6.1/tools/libxl/libxl_internal.h
-@@ -108,6 +108,7 @@
+@@ -111,6 +111,7 @@
  #define STUBDOM_CONSOLE_RESTORE 2
  #define STUBDOM_CONSOLE_SERIAL 3
  #define STUBDOM_SPECIAL_CONSOLES 3
@@ -301,7 +301,7 @@ Index: xen-4.6.1/tools/libxl/libxl_internal.h
  #define TAP_DEVICE_SUFFIX "-emu"
  #define DOMID_XS_PATH "domid"
  
-@@ -1926,6 +1927,9 @@ _hidden libxl__json_object *libxl__json_
+@@ -1929,6 +1930,9 @@ _hidden libxl__json_object *libxl__json_
  _hidden int libxl__device_model_version_running(libxl__gc *gc, uint32_t domid);
    /* Return the system-wide default device model */
  _hidden libxl_device_model_version libxl__default_device_model(libxl__gc *gc);
