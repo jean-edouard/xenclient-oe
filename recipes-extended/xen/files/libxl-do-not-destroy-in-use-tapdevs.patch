@@ -40,7 +40,7 @@ Index: xen-4.6.1/tools/libxl/libxl_blktap2.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl_blktap2.c
 +++ xen-4.6.1/tools/libxl/libxl_blktap2.c
-@@ -51,12 +51,42 @@ char *libxl__blktap_devpath(libxl__gc *g
+@@ -50,12 +50,42 @@ char *libxl__blktap_devpath(libxl__gc *g
      return NULL;
  }
  
@@ -83,7 +83,7 @@ Index: xen-4.6.1/tools/libxl/libxl_blktap2.c
  
      type = libxl__strdup(gc, params);
  
-@@ -75,6 +105,13 @@ int libxl__device_destroy_tapdisk(libxl_
+@@ -74,6 +104,13 @@ int libxl__device_destroy_tapdisk(libxl_
          return ERROR_FAIL;
      }
  
