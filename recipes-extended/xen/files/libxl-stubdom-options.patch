@@ -2,7 +2,7 @@ Index: xen-4.6.1/tools/libxl/libxl_types.idl
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl_types.idl
 +++ xen-4.6.1/tools/libxl/libxl_types.idl
-@@ -459,6 +459,11 @@ libxl_domain_build_info = Struct("domain
+@@ -462,6 +462,11 @@ libxl_domain_build_info = Struct("domain
      #  parameters for all type of scheduler
      ("sched_params",     libxl_domain_sched_params),
  
@@ -62,7 +62,7 @@ Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/xl_cmdimpl.c
 +++ xen-4.6.1/tools/libxl/xl_cmdimpl.c
-@@ -2216,6 +2216,17 @@ skip_vfb:
+@@ -2221,6 +2221,17 @@ skip_vfb:
      }
  
  
