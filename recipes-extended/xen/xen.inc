@@ -70,7 +70,12 @@ SRC_URI = "${XEN_SRC_URI};name=source \
     file://libxl-misc-fixes.patch \
     file://libxl-vif-make-ioemu-and-stubdom-mac-addresses-configurable.patch \
     file://libxl-openxt-specific-changes.patch \
-    file://libxl-xenmgr-stuff.patch \
+    file://libxl-domain-state.patch \
+    file://libxl-fixup-cmdline-ops.patch \
+    file://libxl-crypto-key-dir.patch \
+    file://libxl-fix-reboot.patch \
+    file://libxl-display-manager-support.patch \
+    file://libxl-misc-xenmgr-support.patch \
     file://libxl-stubdom-options.patch \
 "
 
