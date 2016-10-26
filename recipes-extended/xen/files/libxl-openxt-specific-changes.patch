@@ -6,21 +6,15 @@ LibXL modifications specific to OpenXT
 ################################################################################
 LONG DESCRIPTION:
 ################################################################################
-* Fix the path to qemu-ifup
-* Don't use "-vnc none" or "-net none", our version of QEMU doesn't support it
-* Replace "-std-vga" with "-vga std"
-* Disable emulated networking for guests that don't have a stubdomain
-* More QEMU option changes to satisfy our version
-* Use the stubdomain kernel cmdline to pass arguments to QEMU
 * Write a couple of xenstore nodes
-* Use the stubdomain initramfs instead of a disk
+* Use a pty as the console backend
+* Fix domain unpause for disk-less Linux stubdomains
 
 ################################################################################
 CHANGELOG
 ################################################################################
 Authors:
 Martin Osterloh <osterlohm@ainfosec.com>
-Jed Lejosne <lejosnej@ainfosec.com>
 
 ################################################################################
 REMOVAL
