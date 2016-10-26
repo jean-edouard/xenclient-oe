@@ -1,24 +1,39 @@
-From fc0f1c6d0d33c4374512a742c632abe61bd64183 Mon Sep 17 00:00:00 2001
-From: Chris Rogers <rogersc@ainfosec.com>
-Date: Wed, 26 Oct 2016 12:41:22 -0400
-Subject: [PATCH 5/6] libxl-display-manager-support.patch
+################################################################################
+SHORT DESCRIPTION:
+################################################################################
 
-* New config option 'dm_display' to support different display managers. Defaults
-  to surfman.
+################################################################################
+LONG DESCRIPTION:
+################################################################################
+New config option 'dm_display' to support different display managers. Defaults
+to surfman.
 
-Signed-off-by: Chris Rogers <rogersc@ainfosec.com>
----
- tools/libxl/libxl_dm.c       | 16 +++++++++++++++-
- tools/libxl/libxl_internal.h |  2 ++
- tools/libxl/libxl_types.idl  |  5 +++++
- tools/libxl/xl_cmdimpl.c     | 10 ++++++++++
- 4 files changed, 32 insertions(+), 1 deletion(-)
+################################################################################
+CHANGELOG
+################################################################################
+Authors:
+Chris Rogers <rogersc@ainfosec.com>
 
-diff --git a/tools/libxl/libxl_dm.c b/tools/libxl/libxl_dm.c
-index 8179093..e02240a 100644
---- a/tools/libxl/libxl_dm.c
-+++ b/tools/libxl/libxl_dm.c
-@@ -91,6 +91,15 @@ const char *libxl__domain_device_model(libxl__gc *gc,
+################################################################################
+REMOVAL
+################################################################################
+
+################################################################################
+UPSTREAM PLAN
+################################################################################
+
+################################################################################
+INTERNAL DEPENDENCIES
+################################################################################
+
+################################################################################
+PATCHES
+################################################################################
+Index: xen-4.6.1/tools/libxl/libxl_dm.c
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl_dm.c
++++ xen-4.6.1/tools/libxl/libxl_dm.c
+@@ -91,6 +91,15 @@ const char *libxl__domain_device_model(l
      return dm;
  }
  
@@ -34,7 +49,7 @@ index 8179093..e02240a 100644
  static int
  libxl__xc_device_get_rdm(libxl__gc *gc,
                           uint32_t flags,
-@@ -713,6 +722,7 @@ static int libxl__build_device_model_args_new(libxl__gc *gc,
+@@ -713,6 +722,7 @@ static int libxl__build_device_model_arg
      const int num_disks = guest_config->num_disks;
      const int num_nics = guest_config->num_nics;
      const libxl_vnc_info *vnc = libxl__dm_vnc(guest_config);
@@ -42,7 +57,7 @@ index 8179093..e02240a 100644
      const libxl_sdl_info *sdl = dm_sdl(guest_config);
      const char *keymap = dm_keymap(guest_config);
      char *machinearg;
-@@ -825,7 +835,11 @@ static int libxl__build_device_model_args_new(libxl__gc *gc,
+@@ -825,7 +835,11 @@ static int libxl__build_device_model_arg
      /*
       * OpenXT: the default display backend is Surfman
       */
@@ -55,11 +70,11 @@ index 8179093..e02240a 100644
  
      if (sdl && !is_stubdom) {
          flexarray_append(dm_args, "-sdl");
-diff --git a/tools/libxl/libxl_internal.h b/tools/libxl/libxl_internal.h
-index 0274177..4f41752 100644
---- a/tools/libxl/libxl_internal.h
-+++ b/tools/libxl/libxl_internal.h
-@@ -1635,6 +1635,8 @@ _hidden int libxl__wait_for_device_model_deprecated(libxl__gc *gc,
+Index: xen-4.6.1/tools/libxl/libxl_internal.h
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl_internal.h
++++ xen-4.6.1/tools/libxl/libxl_internal.h
+@@ -1635,6 +1635,8 @@ _hidden int libxl__wait_for_device_model
  
  _hidden int libxl__destroy_device_model(libxl__gc *gc, uint32_t domid);
  
@@ -68,11 +83,11 @@ index 0274177..4f41752 100644
  _hidden const libxl_vnc_info *libxl__dm_vnc(const libxl_domain_config *g_cfg);
  
  _hidden char *libxl__abs_path(libxl__gc *gc, const char *s, const char *path);
-diff --git a/tools/libxl/libxl_types.idl b/tools/libxl/libxl_types.idl
-index 547af2e..6b8b764 100644
---- a/tools/libxl/libxl_types.idl
-+++ b/tools/libxl/libxl_types.idl
-@@ -247,6 +247,10 @@ libxl_vga_interface_info = Struct("vga_interface_info", [
+Index: xen-4.6.1/tools/libxl/libxl_types.idl
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl_types.idl
++++ xen-4.6.1/tools/libxl/libxl_types.idl
+@@ -247,6 +247,10 @@ libxl_vga_interface_info = Struct("vga_i
      ("kind",    libxl_vga_interface_type),
      ])
  
@@ -83,7 +98,7 @@ index 547af2e..6b8b764 100644
  libxl_vnc_info = Struct("vnc_info", [
      ("enable",        libxl_defbool),
      # "address:port" that should be listened on
-@@ -494,6 +498,7 @@ libxl_domain_build_info = Struct("domain_build_info",[
+@@ -494,6 +498,7 @@ libxl_domain_build_info = Struct("domain
                                         ("nographic",        libxl_defbool),
                                         ("vga",              libxl_vga_interface_info),
                                         ("vnc",              libxl_vnc_info),
@@ -91,10 +106,10 @@ index 547af2e..6b8b764 100644
                                         # keyboard layout, default is en-us keyboard
                                         ("keymap",           string),
                                         ("sdl",              libxl_sdl_info),
-diff --git a/tools/libxl/xl_cmdimpl.c b/tools/libxl/xl_cmdimpl.c
-index 8e74763..6bca47a 100644
---- a/tools/libxl/xl_cmdimpl.c
-+++ b/tools/libxl/xl_cmdimpl.c
+Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/xl_cmdimpl.c
++++ xen-4.6.1/tools/libxl/xl_cmdimpl.c
 @@ -2269,6 +2269,16 @@ skip_vfb:
              b_info->u.hvm.vga.kind = l ? LIBXL_VGA_INTERFACE_TYPE_STD :
                                           LIBXL_VGA_INTERFACE_TYPE_CIRRUS;
@@ -112,6 +127,3 @@ index 8e74763..6bca47a 100644
          if (!xlu_cfg_get_string(config, "hdtype", &buf, 0) &&
              libxl_hdtype_from_string(buf, &b_info->u.hvm.hdtype)) {
                  fprintf(stderr, "ERROR: invalid value \"%s\" for \"hdtype\"\n",
--- 
-2.1.4
-

@@ -1,30 +1,41 @@
-From e74ac4386080d40f39e3e5a1788cef221251b093 Mon Sep 17 00:00:00 2001
-From: Chris Rogers <rogersc@ainfosec.com>
-Date: Wed, 26 Oct 2016 11:46:40 -0400
-Subject: [PATCH 2/6] libxl-fixup-cmdline-ops.patch
+################################################################################
+SHORT DESCRIPTION:
+################################################################################
 
+################################################################################
+LONG DESCRIPTION:
+################################################################################
 * Implement sleep and hibernate for xl.
 * Implemented some functions for the xl command line tool to help xenmgr. For
   example, converting a uuid to domid, the primary method by which xenmgr ids
   domains.
 
-Signed-off-by: Chris Rogers <rogersc@ainfosec.com>
----
- tools/libxl/libxl.c         |  18 +++++++
- tools/libxl/libxl.h         |   2 +
- tools/libxl/libxl_types.idl |   2 +
- tools/libxl/libxl_utils.c   |  58 ++++++++++++++++++++
- tools/libxl/libxl_utils.h   |   3 ++
- tools/libxl/xl.h            |   3 ++
- tools/libxl/xl_cmdimpl.c    | 125 +++++++++++++++++++++++++++++++++++++++++++-
- tools/libxl/xl_cmdtable.c   |  17 ++++++
- 8 files changed, 227 insertions(+), 1 deletion(-)
+################################################################################
+CHANGELOG
+################################################################################
+Authors:
+Chris Rogers <rogersc@ainfosec.com>
 
-diff --git a/tools/libxl/libxl.c b/tools/libxl/libxl.c
-index 132b028..f8ef5af 100644
---- a/tools/libxl/libxl.c
-+++ b/tools/libxl/libxl.c
-@@ -1161,6 +1161,24 @@ int libxl_domain_reboot(libxl_ctx *ctx, uint32_t domid)
+################################################################################
+REMOVAL
+################################################################################
+
+################################################################################
+UPSTREAM PLAN
+################################################################################
+
+################################################################################
+INTERNAL DEPENDENCIES
+################################################################################
+
+################################################################################
+PATCHES
+################################################################################
+Index: xen-4.6.1/tools/libxl/libxl.c
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl.c
++++ xen-4.6.1/tools/libxl/libxl.c
+@@ -1160,6 +1160,24 @@ int libxl_domain_reboot(libxl_ctx *ctx,
      return ret;
  }
  
@@ -49,11 +60,11 @@ index 132b028..f8ef5af 100644
  static void domain_death_occurred(libxl__egc *egc,
                                    libxl_evgen_domain_death **evg_upd,
                                    const char *why) {
-diff --git a/tools/libxl/libxl.h b/tools/libxl/libxl.h
-index fa5aedd..58b3256 100644
---- a/tools/libxl/libxl.h
-+++ b/tools/libxl/libxl.h
-@@ -1171,6 +1171,8 @@ int libxl_domain_remus_start(libxl_ctx *ctx, libxl_domain_remus_info *info,
+Index: xen-4.6.1/tools/libxl/libxl.h
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl.h
++++ xen-4.6.1/tools/libxl/libxl.h
+@@ -1171,6 +1171,8 @@ int libxl_domain_remus_start(libxl_ctx *
  
  int libxl_domain_shutdown(libxl_ctx *ctx, uint32_t domid);
  int libxl_domain_reboot(libxl_ctx *ctx, uint32_t domid);
@@ -62,10 +73,10 @@ index fa5aedd..58b3256 100644
  int libxl_domain_destroy(libxl_ctx *ctx, uint32_t domid,
                           const libxl_asyncop_how *ao_how)
                           LIBXL_EXTERNAL_CALLERS_ONLY;
-diff --git a/tools/libxl/libxl_types.idl b/tools/libxl/libxl_types.idl
-index 775cec7..8d96fa7 100644
---- a/tools/libxl/libxl_types.idl
-+++ b/tools/libxl/libxl_types.idl
+Index: xen-4.6.1/tools/libxl/libxl_types.idl
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl_types.idl
++++ xen-4.6.1/tools/libxl/libxl_types.idl
 @@ -154,6 +154,7 @@ libxl_trigger = Enumeration("trigger", [
      (4, "INIT"),
      (5, "RESET"),
@@ -82,11 +93,11 @@ index 775cec7..8d96fa7 100644
      ("shutdown_reason", libxl_shutdown_reason),
      ("outstanding_memkb",  MemKB),
      ("current_memkb",   MemKB),
-diff --git a/tools/libxl/libxl_utils.c b/tools/libxl/libxl_utils.c
-index 3f2d553..64e2aee 100644
---- a/tools/libxl/libxl_utils.c
-+++ b/tools/libxl/libxl_utils.c
-@@ -93,6 +93,64 @@ int libxl_name_to_domid(libxl_ctx *ctx, const char *name,
+Index: xen-4.6.1/tools/libxl/libxl_utils.c
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl_utils.c
++++ xen-4.6.1/tools/libxl/libxl_utils.c
+@@ -93,6 +93,64 @@ int libxl_name_to_domid(libxl_ctx *ctx,
      return ret;
  }
  
@@ -151,11 +162,11 @@ index 3f2d553..64e2aee 100644
  int libxl_domain_qualifier_to_domid(libxl_ctx *ctx, const char *name,
                                      uint32_t *domid)
  {
-diff --git a/tools/libxl/libxl_utils.h b/tools/libxl/libxl_utils.h
-index 9dcba4f..a737601 100644
---- a/tools/libxl/libxl_utils.h
-+++ b/tools/libxl/libxl_utils.h
-@@ -25,6 +25,9 @@ char *libxl_basename(const char *name); /* returns string from strdup */
+Index: xen-4.6.1/tools/libxl/libxl_utils.h
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl_utils.h
++++ xen-4.6.1/tools/libxl/libxl_utils.h
+@@ -25,6 +25,9 @@ char *libxl_basename(const char *name);
  
  unsigned long libxl_get_required_shadow_memory(unsigned long maxmem_kb, unsigned int smp_cpus);
  int libxl_name_to_domid(libxl_ctx *ctx, const char *name, uint32_t *domid);
@@ -165,10 +176,10 @@ index 9dcba4f..a737601 100644
  int libxl_domain_qualifier_to_domid(libxl_ctx *ctx, const char *name, uint32_t *domid);
  char *libxl_domid_to_name(libxl_ctx *ctx, uint32_t domid);
  int libxl_cpupool_qualifier_to_cpupoolid(libxl_ctx *ctx, const char *p,
-diff --git a/tools/libxl/xl.h b/tools/libxl/xl.h
-index 13bccba..b5a2ed6 100644
---- a/tools/libxl/xl.h
-+++ b/tools/libxl/xl.h
+Index: xen-4.6.1/tools/libxl/xl.h
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/xl.h
++++ xen-4.6.1/tools/libxl/xl.h
 @@ -55,6 +55,9 @@ int main_unpause(int argc, char **argv);
  int main_destroy(int argc, char **argv);
  int main_shutdown(int argc, char **argv);
@@ -179,11 +190,11 @@ index 13bccba..b5a2ed6 100644
  int main_list(int argc, char **argv);
  int main_vm_list(int argc, char **argv);
  int main_create(int argc, char **argv);
-diff --git a/tools/libxl/xl_cmdimpl.c b/tools/libxl/xl_cmdimpl.c
-index a1db6a0..c35b2c4 100644
---- a/tools/libxl/xl_cmdimpl.c
-+++ b/tools/libxl/xl_cmdimpl.c
-@@ -3704,6 +3704,39 @@ static void wait_for_domain_deaths(libxl_evgen_domain_death **deathws, int nr)
+Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/xl_cmdimpl.c
++++ xen-4.6.1/tools/libxl/xl_cmdimpl.c
+@@ -3704,6 +3704,39 @@ static void wait_for_domain_deaths(libxl
      }
  }
  
@@ -336,10 +347,10 @@ index a1db6a0..c35b2c4 100644
  
      return 0;
  }
-diff --git a/tools/libxl/xl_cmdtable.c b/tools/libxl/xl_cmdtable.c
-index 0071f12..0b04196 100644
---- a/tools/libxl/xl_cmdtable.c
-+++ b/tools/libxl/xl_cmdtable.c
+Index: xen-4.6.1/tools/libxl/xl_cmdtable.c
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/xl_cmdtable.c
++++ xen-4.6.1/tools/libxl/xl_cmdtable.c
 @@ -75,6 +75,13 @@ struct cmd_spec cmd_table[] = {
        "                        no PV drivers.\n"
        "-w, --wait              Wait for guest(s) to shutdown.\n"
@@ -371,6 +382,3 @@ index 0071f12..0b04196 100644
      { "rename",
        &main_rename, 0, 1,
        "Rename a domain",
--- 
-2.1.4
-

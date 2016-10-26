@@ -1,28 +1,42 @@
-From 6f6d3b93430b8c31427380a29dc816c17fb8f249 Mon Sep 17 00:00:00 2001
-From: Chris Rogers <rogersc@ainfosec.com>
-Date: Wed, 26 Oct 2016 12:48:02 -0400
-Subject: [PATCH 6/6] libxl-misc-xenmgr-support.patch
+################################################################################
+SHORT DESCRIPTION:
+################################################################################
 
-* This patch contains several changes that couldn't be grouped elsewhere. These
-  changes support running xl on OpenXT with xenmgr as the toplevel toolstack
-  component. Some of the changes include tweaking qemu options, reworking the
-  vfb/vkb initialization, and writing OpenXT specific xenstore nodes.  Refer
-  to the patch below for a comprehensive list of changes.
+################################################################################
+LONG DESCRIPTION:
+################################################################################
+This patch contains several changes that couldn't be grouped elsewhere. These
+changes support running xl on OpenXT with xenmgr as the toplevel toolstack
+component. Some of the changes include tweaking qemu options, reworking the
+vfb/vkb initialization, and writing OpenXT specific xenstore nodes.  Refer
+to the patch below for a comprehensive list of changes.
 
-Signed-off-by: Chris Rogers <rogersc@ainfosec.com>
----
- tools/libxl/libxl.c         |   7 ++-
- tools/libxl/libxl_create.c  |  29 +++++++-----
- tools/libxl/libxl_dm.c      |   4 +-
- tools/libxl/libxl_types.idl |   4 ++
- tools/libxl/xl_cmdimpl.c    | 106 ++++++++++++++++++--------------------------
- 5 files changed, 74 insertions(+), 76 deletions(-)
+################################################################################
+CHANGELOG
+################################################################################
+Authors:
+Chris Rogers <rogersc@ainfosec.com>
 
-diff --git a/tools/libxl/libxl.c b/tools/libxl/libxl.c
-index 79e8965..fecc5c3 100644
---- a/tools/libxl/libxl.c
-+++ b/tools/libxl/libxl.c
-@@ -3482,6 +3482,8 @@ void libxl__device_nic_add(libxl__egc *egc, uint32_t domid,
+################################################################################
+REMOVAL
+################################################################################
+
+################################################################################
+UPSTREAM PLAN
+################################################################################
+
+################################################################################
+INTERNAL DEPENDENCIES
+################################################################################
+
+################################################################################
+PATCHES
+################################################################################
+Index: xen-4.6.1/tools/libxl/libxl.c
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl.c
++++ xen-4.6.1/tools/libxl/libxl.c
+@@ -3481,6 +3481,8 @@ void libxl__device_nic_add(libxl__egc *e
      aodev->action = LIBXL__DEVICE_ACTION_ADD;
      libxl__wait_device_connection(egc, aodev);
  
@@ -31,7 +45,7 @@ index 79e8965..fecc5c3 100644
      rc = 0;
  out:
      libxl__xs_transaction_abort(gc, &t);
-@@ -4174,6 +4176,9 @@ int libxl__device_vfb_add(libxl__gc *gc, uint32_t domid, libxl_device_vfb *vfb)
+@@ -4173,6 +4175,9 @@ int libxl__device_vfb_add(libxl__gc *gc,
                                libxl__xs_kvs_of_flexarray(gc, back, back->count),
                                libxl__xs_kvs_of_flexarray(gc, front, front->count),
                                NULL);
@@ -41,7 +55,7 @@ index 79e8965..fecc5c3 100644
      rc = 0;
  out:
      return rc;
-@@ -6778,7 +6783,7 @@ int libxl_retrieve_domain_configuration(libxl_ctx *ctx, uint32_t domid,
+@@ -6777,7 +6782,7 @@ int libxl_retrieve_domain_configuration(
                      break;                                              \
              }                                                           \
                                                                          \
@@ -50,10 +64,10 @@ index 79e8965..fecc5c3 100644
                  libxl_device_##type *dst, *src;                         \
                  dst = q;                                                \
                  src = &p[j];                                            \
-diff --git a/tools/libxl/libxl_create.c b/tools/libxl/libxl_create.c
-index 0e5c3f7..cb8dca6 100644
---- a/tools/libxl/libxl_create.c
-+++ b/tools/libxl/libxl_create.c
+Index: xen-4.6.1/tools/libxl/libxl_create.c
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl_create.c
++++ xen-4.6.1/tools/libxl/libxl_create.c
 @@ -634,10 +634,14 @@ retry_transaction:
      libxl__xs_mkdir(gc, t,
                      libxl__sprintf(gc, "%s/control", dom_path),
@@ -82,7 +96,7 @@ index 0e5c3f7..cb8dca6 100644
      xs_write(ctx->xsh, t, libxl__sprintf(gc, "%s/control/platform-feature-multiprocessor-suspend", dom_path), "1", 1);
      xs_write(ctx->xsh, t, libxl__sprintf(gc, "%s/control/platform-feature-xs_reset_watches", dom_path), "1", 1);
      if (!xs_transaction_end(ctx->xsh, t, 0)) {
-@@ -1281,17 +1290,12 @@ static void domcreate_launch_dm(libxl__egc *egc, libxl__multidev *multidev,
+@@ -1281,17 +1290,12 @@ static void domcreate_launch_dm(libxl__e
      {
          libxl__device_console console;
          libxl__device device;
@@ -100,7 +114,7 @@ index 0e5c3f7..cb8dca6 100644
          dcs->dmss.dm.guest_domid = domid;
          if (libxl_defbool_val(d_config->b_info.device_model_stubdomain))
              libxl__spawn_stub_dm(egc, &dcs->dmss);
-@@ -1314,17 +1318,20 @@ static void domcreate_launch_dm(libxl__egc *egc, libxl__multidev *multidev,
+@@ -1314,17 +1318,20 @@ static void domcreate_launch_dm(libxl__e
          libxl__device_console console;
          libxl__device device;
  
@@ -126,11 +140,11 @@ index 0e5c3f7..cb8dca6 100644
  
          console.backend_domid = state->console_domid;
          libxl__device_console_add(gc, domid, &console, state, &device);
-diff --git a/tools/libxl/libxl_dm.c b/tools/libxl/libxl_dm.c
-index e02240a..be35853 100644
---- a/tools/libxl/libxl_dm.c
-+++ b/tools/libxl/libxl_dm.c
-@@ -624,7 +624,7 @@ static int libxl__build_device_model_args_old(libxl__gc *gc,
+Index: xen-4.6.1/tools/libxl/libxl_dm.c
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl_dm.c
++++ xen-4.6.1/tools/libxl/libxl_dm.c
+@@ -624,7 +624,7 @@ static int libxl__build_device_model_arg
      }
      for (i = 0; b_info->extra && b_info->extra[i] != NULL; i++)
          flexarray_append(dm_args, b_info->extra[i]);
@@ -139,7 +153,7 @@ index e02240a..be35853 100644
      switch (b_info->type) {
      case LIBXL_DOMAIN_TYPE_PV:
          flexarray_append(dm_args, "xenpv");
-@@ -1328,7 +1328,7 @@ static int libxl__write_stub_dmargs(libxl__gc *gc,
+@@ -1328,7 +1328,7 @@ static int libxl__write_stub_dmargs(libx
      while (args[i] != NULL) {
          if (linux_stubdom ||
              (strcmp(args[i], "-sdl") &&
@@ -148,11 +162,11 @@ index e02240a..be35853 100644
              strcat(dmargs, " ");
              strcat(dmargs, args[i]);
          }
-diff --git a/tools/libxl/libxl_types.idl b/tools/libxl/libxl_types.idl
-index 6b8b764..3d9ad8c 100644
---- a/tools/libxl/libxl_types.idl
-+++ b/tools/libxl/libxl_types.idl
-@@ -449,6 +449,10 @@ libxl_domain_build_info = Struct("domain_build_info",[
+Index: xen-4.6.1/tools/libxl/libxl_types.idl
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/libxl_types.idl
++++ xen-4.6.1/tools/libxl/libxl_types.idl
+@@ -449,6 +449,10 @@ libxl_domain_build_info = Struct("domain
      ("device_model_ssidref", uint32),
      ("device_model_ssid_label", string),
  
@@ -163,11 +177,11 @@ index 6b8b764..3d9ad8c 100644
      # extra parameters pass directly to qemu, NULL terminated
      ("extra",            libxl_string_list),
      # extra parameters pass directly to qemu for PV guest, NULL terminated
-diff --git a/tools/libxl/xl_cmdimpl.c b/tools/libxl/xl_cmdimpl.c
-index 6bca47a..53b9a29 100644
---- a/tools/libxl/xl_cmdimpl.c
-+++ b/tools/libxl/xl_cmdimpl.c
-@@ -1270,8 +1270,9 @@ static void parse_config_data(const char *config_source,
+Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
+===================================================================
+--- xen-4.6.1.orig/tools/libxl/xl_cmdimpl.c
++++ xen-4.6.1/tools/libxl/xl_cmdimpl.c
+@@ -1270,8 +1270,9 @@ static void parse_config_data(const char
  {
      const char *buf;
      long l, vcpus = 0;
@@ -178,7 +192,7 @@ index 6bca47a..53b9a29 100644
      XLU_ConfigList *channels, *ioports, *irqs, *iomem, *viridian, *dtdevs;
      int num_ioports, num_irqs, num_iomem, num_cpus, num_viridian;
      int pci_power_mgmt = 0;
-@@ -1490,6 +1491,11 @@ static void parse_config_data(const char *config_source,
+@@ -1490,6 +1491,11 @@ static void parse_config_data(const char
  
      xlu_cfg_get_defbool(config, "driver_domain", &c_info->driver_domain, 0);
  
@@ -296,7 +310,7 @@ index 6bca47a..53b9a29 100644
                  if (common_domname
                      && strcmp(d_config.c_info.name, common_domname)) {
                      d_config.c_info.name = strdup(common_domname);
-@@ -3685,13 +3663,17 @@ static void unpause_domain(uint32_t domid)
+@@ -3685,13 +3663,17 @@ static void unpause_domain(uint32_t domi
  static void destroy_domain(uint32_t domid, int force)
  {
      int rc;
@@ -315,6 +329,3 @@ index 6bca47a..53b9a29 100644
      rc = libxl_domain_destroy(ctx, domid, 0);
      if (rc) { fprintf(stderr,"destroy failed (rc=%d)\n",rc); exit(-1); }
      libxl_update_state_direct(ctx, *uuid, "shutdown");
--- 
-2.1.4
-
