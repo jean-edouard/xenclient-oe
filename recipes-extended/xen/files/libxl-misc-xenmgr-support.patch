@@ -1,0 +1,320 @@
+From 6f6d3b93430b8c31427380a29dc816c17fb8f249 Mon Sep 17 00:00:00 2001
+From: Chris Rogers <rogersc@ainfosec.com>
+Date: Wed, 26 Oct 2016 12:48:02 -0400
+Subject: [PATCH 6/6] libxl-misc-xenmgr-support.patch
+
+* This patch contains several changes that couldn't be grouped elsewhere. These
+  changes support running xl on OpenXT with xenmgr as the toplevel toolstack
+  component. Some of the changes include tweaking qemu options, reworking the
+  vfb/vkb initialization, and writing OpenXT specific xenstore nodes.  Refer
+  to the patch below for a comprehensive list of changes.
+
+Signed-off-by: Chris Rogers <rogersc@ainfosec.com>
+---
+ tools/libxl/libxl.c         |   7 ++-
+ tools/libxl/libxl_create.c  |  29 +++++++-----
+ tools/libxl/libxl_dm.c      |   4 +-
+ tools/libxl/libxl_types.idl |   4 ++
+ tools/libxl/xl_cmdimpl.c    | 106 ++++++++++++++++++--------------------------
+ 5 files changed, 74 insertions(+), 76 deletions(-)
+
+diff --git a/tools/libxl/libxl.c b/tools/libxl/libxl.c
+index 79e8965..fecc5c3 100644
+--- a/tools/libxl/libxl.c
++++ b/tools/libxl/libxl.c
+@@ -3482,6 +3482,8 @@ void libxl__device_nic_add(libxl__egc *egc, uint32_t domid,
+     aodev->action = LIBXL__DEVICE_ACTION_ADD;
+     libxl__wait_device_connection(egc, aodev);
+ 
++    libxl__xs_write(gc, XBT_NULL, GCSPRINTF("%s/hotplug-status", libxl__device_backend_path(gc, device)), "connected");
++
+     rc = 0;
+ out:
+     libxl__xs_transaction_abort(gc, &t);
+@@ -4174,6 +4176,9 @@ int libxl__device_vfb_add(libxl__gc *gc, uint32_t domid, libxl_device_vfb *vfb)
+                               libxl__xs_kvs_of_flexarray(gc, back, back->count),
+                               libxl__xs_kvs_of_flexarray(gc, front, front->count),
+                               NULL);
++
++    libxl__xs_write(gc, XBT_NULL, GCSPRINTF("%s/hotplug-status", libxl__device_backend_path(gc, &device)), "connected");
++
+     rc = 0;
+ out:
+     return rc;
+@@ -6778,7 +6783,7 @@ int libxl_retrieve_domain_configuration(libxl_ctx *ctx, uint32_t domid,
+                     break;                                              \
+             }                                                           \
+                                                                         \
+-            if (j < num) {         /* found in xenstore */              \
++            if (j < num || !strcmp(#type, "nic")) {  /* found in xenstore */ \
+                 libxl_device_##type *dst, *src;                         \
+                 dst = q;                                                \
+                 src = &p[j];                                            \
+diff --git a/tools/libxl/libxl_create.c b/tools/libxl/libxl_create.c
+index 0e5c3f7..cb8dca6 100644
+--- a/tools/libxl/libxl_create.c
++++ b/tools/libxl/libxl_create.c
+@@ -634,10 +634,14 @@ retry_transaction:
+     libxl__xs_mkdir(gc, t,
+                     libxl__sprintf(gc, "%s/control", dom_path),
+                     roperm, ARRAY_SIZE(roperm));
+-    if (info->type == LIBXL_DOMAIN_TYPE_HVM)
++    if (info->type == LIBXL_DOMAIN_TYPE_HVM) {
+         libxl__xs_mkdir(gc, t,
+                         libxl__sprintf(gc, "%s/hvmloader", dom_path),
+                         roperm, ARRAY_SIZE(roperm));
++        libxl__xs_write(gc, t,
++                        libxl__sprintf(gc, "%s/hvmloader/seabios-legacy-load-roms", dom_path),
++                        "1");
++    }
+ 
+     libxl__xs_mkdir(gc, t,
+                     libxl__sprintf(gc, "%s/control/shutdown", dom_path),
+@@ -678,6 +682,11 @@ retry_transaction:
+     libxl__xs_writev(gc, t, dom_path, info->xsdata);
+     libxl__xs_writev(gc, t, libxl__sprintf(gc, "%s/platform", dom_path), info->platformdata);
+ 
++    if(d_config->b_info.display_depth)
++        xs_write(ctx->xsh, t, libxl__sprintf(gc, "%s/platform/restrictdisplaydepth", dom_path), "1", 1);
++    if(d_config->b_info.display_res)
++        xs_write(ctx->xsh, t, libxl__sprintf(gc, "%s/platform/restrictdisplayres", dom_path), "1", 1);
++
+     xs_write(ctx->xsh, t, libxl__sprintf(gc, "%s/control/platform-feature-multiprocessor-suspend", dom_path), "1", 1);
+     xs_write(ctx->xsh, t, libxl__sprintf(gc, "%s/control/platform-feature-xs_reset_watches", dom_path), "1", 1);
+     if (!xs_transaction_end(ctx->xsh, t, 0)) {
+@@ -1281,17 +1290,12 @@ static void domcreate_launch_dm(libxl__egc *egc, libxl__multidev *multidev,
+     {
+         libxl__device_console console;
+         libxl__device device;
+-        libxl_device_vkb vkb;
+ 
+         init_console_info(gc, &console, 0);
+         console.backend_domid = state->console_domid;
+         libxl__device_console_add(gc, domid, &console, state, &device);
+         libxl__device_console_dispose(&console);
+ 
+-        libxl_device_vkb_init(&vkb);
+-        libxl__device_vkb_add(gc, domid, &vkb);
+-        libxl_device_vkb_dispose(&vkb);
+-
+         dcs->dmss.dm.guest_domid = domid;
+         if (libxl_defbool_val(d_config->b_info.device_model_stubdomain))
+             libxl__spawn_stub_dm(egc, &dcs->dmss);
+@@ -1314,17 +1318,20 @@ static void domcreate_launch_dm(libxl__egc *egc, libxl__multidev *multidev,
+         libxl__device_console console;
+         libxl__device device;
+ 
++        fprintf(stderr, "WARNING: before adding vkb device.\n");
++        for (i = 0; i < d_config->num_vkbs; i++) {
++            fprintf(stderr, "WARNING: adding vkb device.\n");
++            libxl__device_vkb_add(gc, domid, &d_config->vkbs[i]);
++        }
++
+         for (i = 0; i < d_config->num_vfbs; i++) {
++            fprintf(stderr, "WARNING: adding vfb device.\n");
+             libxl__device_vfb_add(gc, domid, &d_config->vfbs[i]);
+-            libxl__device_vkb_add(gc, domid, &d_config->vkbs[i]);
+         }
+ 
+         init_console_info(gc, &console, 0);
+ 
+-        need_qemu = libxl__need_xenpv_qemu(gc, 1, &console,
+-                d_config->num_vfbs, d_config->vfbs,
+-                d_config->num_disks, &d_config->disks[0],
+-                d_config->num_channels, &d_config->channels[0]);
++        need_qemu = false;
+ 
+         console.backend_domid = state->console_domid;
+         libxl__device_console_add(gc, domid, &console, state, &device);
+diff --git a/tools/libxl/libxl_dm.c b/tools/libxl/libxl_dm.c
+index e02240a..be35853 100644
+--- a/tools/libxl/libxl_dm.c
++++ b/tools/libxl/libxl_dm.c
+@@ -624,7 +624,7 @@ static int libxl__build_device_model_args_old(libxl__gc *gc,
+     }
+     for (i = 0; b_info->extra && b_info->extra[i] != NULL; i++)
+         flexarray_append(dm_args, b_info->extra[i]);
+-    flexarray_append(dm_args, "-M");
++    flexarray_append(dm_args, "-machine");
+     switch (b_info->type) {
+     case LIBXL_DOMAIN_TYPE_PV:
+         flexarray_append(dm_args, "xenpv");
+@@ -1328,7 +1328,7 @@ static int libxl__write_stub_dmargs(libxl__gc *gc,
+     while (args[i] != NULL) {
+         if (linux_stubdom ||
+             (strcmp(args[i], "-sdl") &&
+-             strcmp(args[i], "-M") && strcmp(args[i], "xenfv"))) {
++             strcmp(args[i], "-machine") && strcmp(args[i], "xenfv"))) {
+             strcat(dmargs, " ");
+             strcat(dmargs, args[i]);
+         }
+diff --git a/tools/libxl/libxl_types.idl b/tools/libxl/libxl_types.idl
+index 6b8b764..3d9ad8c 100644
+--- a/tools/libxl/libxl_types.idl
++++ b/tools/libxl/libxl_types.idl
+@@ -449,6 +449,10 @@ libxl_domain_build_info = Struct("domain_build_info",[
+     ("device_model_ssidref", uint32),
+     ("device_model_ssid_label", string),
+ 
++    #display restrictions
++    ("display_depth", uint32),
++    ("display_res", uint32),
++
+     # extra parameters pass directly to qemu, NULL terminated
+     ("extra",            libxl_string_list),
+     # extra parameters pass directly to qemu for PV guest, NULL terminated
+diff --git a/tools/libxl/xl_cmdimpl.c b/tools/libxl/xl_cmdimpl.c
+index 6bca47a..53b9a29 100644
+--- a/tools/libxl/xl_cmdimpl.c
++++ b/tools/libxl/xl_cmdimpl.c
+@@ -1270,8 +1270,9 @@ static void parse_config_data(const char *config_source,
+ {
+     const char *buf;
+     long l, vcpus = 0;
++    long vkb_flag, vfb_flag;
+     XLU_Config *config;
+-    XLU_ConfigList *cpus, *vbds, *nics, *pcis, *cvfbs, *cpuids, *vtpms;
++    XLU_ConfigList *cpus, *vbds, *nics, *pcis, *cpuids, *vtpms;
+     XLU_ConfigList *channels, *ioports, *irqs, *iomem, *viridian, *dtdevs;
+     int num_ioports, num_irqs, num_iomem, num_cpus, num_viridian;
+     int pci_power_mgmt = 0;
+@@ -1490,6 +1491,11 @@ static void parse_config_data(const char *config_source,
+ 
+     xlu_cfg_get_defbool(config, "driver_domain", &c_info->driver_domain, 0);
+ 
++    if(!xlu_cfg_get_long(config, "restrictdisplaydepth", &l, 0))
++        b_info->display_depth = l;
++    if(!xlu_cfg_get_long(config, "restrictdisplayres", &l, 0))
++        b_info->display_res = l;
++
+     switch(b_info->type) {
+     case LIBXL_DOMAIN_TYPE_HVM:
+         kernel_basename = libxl_basename(b_info->kernel);
+@@ -1949,64 +1955,38 @@ skip_nic:
+         fprintf(stderr, "WARNING: vif2: netchannel2 is deprecated and not supported by xl\n");
+     }
+ 
+-    d_config->num_vfbs = 0;
+-    d_config->num_vkbs = 0;
+-    d_config->vfbs = NULL;
+-    d_config->vkbs = NULL;
+-
+-    if (!xlu_cfg_get_list (config, "vfb", &cvfbs, 0, 0)) {
+-        while ((buf = xlu_cfg_get_listitem (cvfbs, d_config->num_vfbs)) != NULL) {
+-            libxl_device_vfb *vfb;
+-            libxl_device_vkb *vkb;
+-
+-            char *buf2 = strdup(buf);
+-            char *p, *p2;
+-
+-            vfb = ARRAY_EXTEND_INIT(d_config->vfbs, d_config->num_vfbs,
+-                                    libxl_device_vfb_init);
+-
+-            vkb = ARRAY_EXTEND_INIT(d_config->vkbs, d_config->num_vkbs,
+-                                    libxl_device_vkb_init);
+-
+-            p = strtok(buf2, ",");
+-            if (!p)
+-                goto skip_vfb;
+-            do {
+-                while (*p == ' ')
+-                    p++;
+-                if ((p2 = strchr(p, '=')) == NULL)
+-                    break;
+-                *p2 = '\0';
+-                if (!strcmp(p, "vnc")) {
+-                    libxl_defbool_set(&vfb->vnc.enable, atoi(p2 + 1));
+-                } else if (!strcmp(p, "vnclisten")) {
+-                    free(vfb->vnc.listen);
+-                    vfb->vnc.listen = strdup(p2 + 1);
+-                } else if (!strcmp(p, "vncpasswd")) {
+-                    free(vfb->vnc.passwd);
+-                    vfb->vnc.passwd = strdup(p2 + 1);
+-                } else if (!strcmp(p, "vncdisplay")) {
+-                    vfb->vnc.display = atoi(p2 + 1);
+-                } else if (!strcmp(p, "vncunused")) {
+-                    libxl_defbool_set(&vfb->vnc.findunused, atoi(p2 + 1));
+-                } else if (!strcmp(p, "keymap")) {
+-                    free(vfb->keymap);
+-                    vfb->keymap = strdup(p2 + 1);
+-                } else if (!strcmp(p, "sdl")) {
+-                    libxl_defbool_set(&vfb->sdl.enable, atoi(p2 + 1));
+-                } else if (!strcmp(p, "opengl")) {
+-                    libxl_defbool_set(&vfb->sdl.opengl, atoi(p2 + 1));
+-                } else if (!strcmp(p, "display")) {
+-                    free(vfb->sdl.display);
+-                    vfb->sdl.display = strdup(p2 + 1);
+-                } else if (!strcmp(p, "xauthority")) {
+-                    free(vfb->sdl.xauthority);
+-                    vfb->sdl.xauthority = strdup(p2 + 1);
+-                }
+-            } while ((p = strtok(NULL, ",")) != NULL);
+-
+-skip_vfb:
+-            free(buf2);
++    //Support adding vkbs by themselves
++    if (!xlu_cfg_get_long (config, "vkb", &vkb_flag, 0)){
++        d_config->num_vkbs = 0;
++        d_config->vkbs = NULL;
++        
++        if (vkb_flag == 1) {
++            for(i = 0; i < 2; i++) {
++                libxl_device_vkb *vkb;
++                fprintf(stderr, "WARNING: init vkb device\n");
++                d_config->vkbs = (libxl_device_vkb *) realloc(d_config->vkbs,                          sizeof(libxl_device_vkb) * (d_config->num_vkbs + 1));
++                vkb = d_config->vkbs + d_config->num_vkbs;
++                libxl_device_vkb_init(vkb);
++                vkb->devid = d_config->num_vkbs;
++                fprintf(stderr, "WARNING: vkb device of devid %d created.\n", vkb->devid);
++                d_config->num_vkbs++;
++            }
++        }
++    }
++    
++    if (!xlu_cfg_get_long (config, "vfb", &vfb_flag, 0)) {
++        d_config->num_vfbs = 0;
++        d_config->vfbs = NULL;
++        
++        if (vfb_flag == 1) {
++            libxl_device_vfb * vfb;
++            fprintf(stderr, "WARNING: init vfb device\n");
++            d_config->vfbs = (libxl_device_vfb *) realloc(d_config->vfbs,                              sizeof(libxl_device_vfb) * (d_config->num_vfbs + 1));
++            vfb = d_config->vfbs + d_config->num_vfbs;
++            libxl_device_vfb_init(vfb);
++            vfb->devid = d_config->num_vfbs;
++            fprintf(stderr, "WARNING: vfb device of devid %d created.\n", vfb->devid);
++            d_config->num_vfbs++;
+         }
+     }
+ 
+@@ -3008,8 +2988,6 @@ start:
+                  */
+                 dom_info->console_autoconnect = 0;
+ 
+-                /* Some settings only make sense on first boot. */
+-                paused = 0;
+                 if (common_domname
+                     && strcmp(d_config.c_info.name, common_domname)) {
+                     d_config.c_info.name = strdup(common_domname);
+@@ -3685,13 +3663,17 @@ static void unpause_domain(uint32_t domid)
+ static void destroy_domain(uint32_t domid, int force)
+ {
+     int rc;
+-
++    libxl_uuid *uuid;
+     if (domid == 0 && !force) {
+         fprintf(stderr, "Not destroying domain 0; use -f to force.\n"
+                         "This can only be done when using a disaggregated "
+                         "hardware domain and toolstack.\n\n");
+         exit(-1);
+     }
++    
++    rc = libxl_domid_to_uuid(ctx, &uuid, domid);
++    if(rc) {fprintf(stderr, "domid to uuid failed during domain destroy\n"); exit(-1);}
++
+     rc = libxl_domain_destroy(ctx, domid, 0);
+     if (rc) { fprintf(stderr,"destroy failed (rc=%d)\n",rc); exit(-1); }
+     libxl_update_state_direct(ctx, *uuid, "shutdown");
+-- 
+2.1.4
+
