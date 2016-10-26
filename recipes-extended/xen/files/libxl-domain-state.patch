@@ -1,0 +1,257 @@
+From 1080708239a17625e16f248f8c6a5583aff45b98 Mon Sep 17 00:00:00 2001
+From: Chris Rogers <rogersc@ainfosec.com>
+Date: Wed, 26 Oct 2016 11:11:45 -0400
+Subject: [PATCH 1/6] libxl-domain-state.patch
+
+* Introduce domain lifecycle state updates. OpenXT maintains domain state beyond
+  the basic Xen states for a domain (such as 'Starting', 'Rebooting', etc). Only
+  Xl knows when we reach these states, upon which it informs Xenmgr, like Xenvm
+  did. Also implements some helper functions to support this feature.
+
+Signed-off-by: Chris Rogers <rogersc@ainfosec.com>
+---
+ tools/libxl/libxl.c             | 10 ++++++++
+ tools/libxl/libxl_create.c      |  2 ++
+ tools/libxl/libxl_dom_suspend.c |  8 +++++++
+ tools/libxl/libxl_utils.c       | 53 +++++++++++++++++++++++++++++++++++++++++
+ tools/libxl/libxl_utils.h       |  2 ++
+ tools/libxl/xl_cmdimpl.c        |  9 +++++++
+ 6 files changed, 84 insertions(+)
+
+diff --git a/tools/libxl/libxl.c b/tools/libxl/libxl.c
+index 2b5d1b9..132b028 100644
+--- a/tools/libxl/libxl.c
++++ b/tools/libxl/libxl.c
+@@ -969,6 +969,8 @@ int libxl_domain_suspend(libxl_ctx *ctx, uint32_t domid, int fd, int flags,
+     AO_CREATE(ctx, domid, ao_how);
+     int rc;
+ 
++    libxl_update_state(ctx, domid, "suspending");
++
+     libxl_domain_type type = libxl__domain_type(gc, domid);
+     if (type == LIBXL_DOMAIN_TYPE_INVALID) {
+         rc = ERROR_FAIL;
+@@ -1007,6 +1009,9 @@ int libxl_domain_pause(libxl_ctx *ctx, uint32_t domid)
+         LIBXL__LOG_ERRNO(ctx, LIBXL__LOG_ERROR, "pausing domain %d", domid);
+         return ERROR_FAIL;
+     }
++
++    libxl_update_state(ctx, domid, "paused");
++
+     return 0;
+ }
+ 
+@@ -1054,6 +1059,9 @@ int libxl_domain_unpause(libxl_ctx *ctx, uint32_t domid)
+         }
+     }
+     ret = xc_domain_unpause(ctx->xch, domid);
++
++    libxl_update_state(ctx, domid, "running");
++
+     if (ret<0) {
+         LIBXL__LOG_ERRNO(ctx, LIBXL__LOG_ERROR, "unpausing domain %d", domid);
+         rc = ERROR_FAIL;
+@@ -1264,6 +1272,8 @@ static void domain_death_xswatch_callback(libxl__egc *egc, libxl__ev_xswatch *w,
+                 libxl__event_occurred(egc, ev);
+ 
+                 evg->shutdown_reported = 1;
++
++                libxl_update_state(egc->gc.owner, got->domain, "shutdown");
+             }
+             evg = LIBXL_TAILQ_NEXT(evg, entry);
+         }
+diff --git a/tools/libxl/libxl_create.c b/tools/libxl/libxl_create.c
+index 33cd593..0e5c3f7 100644
+--- a/tools/libxl/libxl_create.c
++++ b/tools/libxl/libxl_create.c
+@@ -912,6 +912,8 @@ static void initiate_domain_create(libxl__egc *egc,
+     dcs->guest_domid = domid;
+     dcs->dmss.dm.guest_domid = 0; /* means we haven't spawned */
+ 
++     libxl_update_state(ctx, domid, "creating-devices");
++
+     ret = libxl__domain_build_info_setdefault(gc, &d_config->b_info);
+     if (ret) {
+         LOG(ERROR, "Unable to set domain build info defaults");
+diff --git a/tools/libxl/libxl_dom_suspend.c b/tools/libxl/libxl_dom_suspend.c
+index 4cc01ad..9240ec0 100644
+--- a/tools/libxl/libxl_dom_suspend.c
++++ b/tools/libxl/libxl_dom_suspend.c
+@@ -38,6 +38,9 @@ int libxl__domain_suspend_device_model(libxl__gc *gc,
+     case LIBXL_DEVICE_MODEL_VERSION_QEMU_XEN:
+         if (libxl__qmp_stop(gc, domid))
+             return ERROR_FAIL;
++
++        libxl_update_state(CTX, domid, "suspending");
++
+         /* Save DM state into filename */
+         ret = libxl__qmp_save(gc, domid, filename);
+         if (ret)
+@@ -104,6 +107,8 @@ static void domain_suspend_callback_common(libxl__egc *egc,
+         xc_hvm_param_get(CTX->xch, domid, HVM_PARAM_ACPI_S_STATE, &hvm_s_state);
+     }
+ 
++    libxl_update_state(CTX, domid, "suspending");
++
+     if ((hvm_s_state == 0) && (dss->guest_evtchn.port >= 0)) {
+         LOG(DEBUG, "issuing %s suspend request via event channel",
+             dss->hvm ? "PVHVM" : "PV");
+@@ -153,6 +158,9 @@ static void domain_suspend_callback_common(libxl__egc *egc,
+     dss->pvcontrol.timeout_ms = 60 * 1000;
+     dss->pvcontrol.callback = domain_suspend_common_pvcontrol_suspending;
+     libxl__xswait_start(gc, &dss->pvcontrol);
++
++    libxl_update_state(CTX, domid, "suspended");
++
+     return;
+ 
+  err:
+diff --git a/tools/libxl/libxl_utils.c b/tools/libxl/libxl_utils.c
+index 408ec85..3f2d553 100644
+--- a/tools/libxl/libxl_utils.c
++++ b/tools/libxl/libxl_utils.c
+@@ -1195,6 +1195,59 @@ int libxl_domid_valid_guest(uint32_t domid)
+     return domid > 0 && domid < DOMID_FIRST_RESERVED;
+ }
+ 
++int libxl_update_state_direct(libxl_ctx *ctx, libxl_uuid xl_uuid, const char * state)
++{
++    char path[48];
++    char uuid[37];
++
++    uuid_unparse(xl_uuid.uuid, uuid);
++    sprintf(path, "/state/%s/state", uuid);
++
++    if (!xs_write(ctx->xsh, XBT_NULL, path, state, strlen(state)))
++    {
++        fprintf(stderr, "Failed to write the xenstore node: %s with state: %s\n", path, state);
++    }
++
++    return 0;
++
++}
++
++int libxl_update_state(libxl_ctx *ctx, uint32_t domid_in, const char *state)
++{
++    int nb_domains, i;
++    uint32_t domid;
++    char path[48];
++    char uuid[37];
++    libxl_dominfo *dominfo;
++    libxl_uuid *xl_uuid = NULL;
++    
++    dominfo = libxl_list_domain(ctx, &nb_domains);
++    
++    for(i = 0; i < nb_domains; i++)
++    {
++        domid = dominfo[i].domid;
++        if (domid == domid_in)
++        {
++            xl_uuid = &dominfo[i].uuid;
++            break;
++        }
++    }
++    if (!xl_uuid){
++        fprintf(stderr, "Failed to find the uuid\n");
++        return -1;
++    }
++    
++    uuid_unparse(xl_uuid->uuid, uuid);
++    sprintf(path, "/state/%s/state", uuid);
++ 
++    if (!xs_write(ctx->xsh, XBT_NULL, path, state, strlen(state)))
++    {
++        fprintf(stderr, "Failed to write the xenstore node: %s with state: %s\n", path, state);
++    }
++    free(dominfo);
++    return 0;
++}
++
+ void libxl_string_copy(libxl_ctx *ctx, char **dst, char **src)
+ {
+     GC_INIT(ctx);
+diff --git a/tools/libxl/libxl_utils.h b/tools/libxl/libxl_utils.h
+index 339ebdf..9dcba4f 100644
+--- a/tools/libxl/libxl_utils.h
++++ b/tools/libxl/libxl_utils.h
+@@ -37,6 +37,8 @@ int libxl_get_stubdom_id(libxl_ctx *ctx, int guest_domid);
+ int libxl_is_stubdom(libxl_ctx *ctx, uint32_t domid, uint32_t *target_domid);
+ int libxl_create_logfile(libxl_ctx *ctx, const char *name, char **full_name);
+ int libxl_string_to_backend(libxl_ctx *ctx, char *s, libxl_disk_backend *backend);
++int libxl_update_state(libxl_ctx *ctx, uint32_t domid_in, const char *state);
++int libxl_update_state_direct(libxl_ctx *ctx, libxl_uuid xl_uuid, const char *state);
+ 
+ int libxl_read_file_contents(libxl_ctx *ctx, const char *filename,
+                              void **data_r, int *datalen_r);
+diff --git a/tools/libxl/xl_cmdimpl.c b/tools/libxl/xl_cmdimpl.c
+index b277fa8..a1db6a0 100644
+--- a/tools/libxl/xl_cmdimpl.c
++++ b/tools/libxl/xl_cmdimpl.c
+@@ -2439,6 +2439,7 @@ static int handle_domain_death(uint32_t *r_domid,
+         break;
+     case LIBXL_SHUTDOWN_REASON_SUSPEND:
+         LOG("Domain has suspended.");
++        libxl_update_state(ctx, *r_domid, "suspended");
+         return 0;
+     case LIBXL_SHUTDOWN_REASON_CRASH:
+         action = d_config->on_crash;
+@@ -2899,6 +2900,8 @@ start:
+         restore_fd_to_close = -1;
+     }
+ 
++    libxl_update_state(ctx, domid, "created");
++
+     if (!paused)
+         libxl_domain_unpause(ctx, domid);
+ 
+@@ -2992,6 +2995,7 @@ start:
+                  * re-creation fails sometimes.
+                  */
+                 LOG("Done. Rebooting now");
++                libxl_update_state_direct(ctx, d_config.c_info.uuid, "rebooted");
+                 sleep(2);
+                 goto start;
+ 
+@@ -3009,6 +3013,7 @@ start:
+             LOG("Domain %d has been destroyed.", domid);
+             libxl_event_free(ctx, event);
+             ret = 0;
++            libxl_update_state(ctx, domid, "shutdown");
+             goto out;
+ 
+         case LIBXL_EVENT_TYPE_DISK_EJECT:
+@@ -3030,6 +3035,7 @@ error_out:
+     release_lock();
+     if (libxl_domid_valid_guest(domid)) {
+         libxl_domain_destroy(ctx, domid, 0);
++        libxl_update_state(ctx, domid, "shutdown");
+         domid = INVALID_DOMID;
+     }
+ 
+@@ -3663,6 +3669,7 @@ static void destroy_domain(uint32_t domid, int force)
+     }
+     rc = libxl_domain_destroy(ctx, domid, 0);
+     if (rc) { fprintf(stderr,"destroy failed (rc=%d)\n",rc); exit(-1); }
++    libxl_update_state_direct(ctx, *uuid, "shutdown");
+ }
+ 
+ static void wait_for_domain_deaths(libxl_evgen_domain_death **deathws, int nr)
+@@ -3705,6 +3712,7 @@ static void shutdown_domain(uint32_t domid,
+     int rc;
+ 
+     fprintf(stderr, "Shutting down domain %d\n", domid);
++    libxl_update_state(ctx, domid, "shutdowning");
+     rc=libxl_domain_shutdown(ctx, domid);
+     if (rc == ERROR_NOPARAVIRT) {
+         if (fallback_trigger) {
+@@ -3737,6 +3745,7 @@ static void reboot_domain(uint32_t domid, libxl_evgen_domain_death **deathw,
+     int rc;
+ 
+     fprintf(stderr, "Rebooting domain %d\n", domid);
++    libxl_update_state(ctx, domid, "rebooting");
+     rc=libxl_domain_reboot(ctx, domid);
+     if (rc == ERROR_NOPARAVIRT) {
+         if (fallback_trigger) {
+-- 
+2.1.4
+
