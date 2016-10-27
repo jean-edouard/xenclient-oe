@@ -110,7 +110,7 @@ Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/xl_cmdimpl.c
 +++ xen-4.6.1/tools/libxl/xl_cmdimpl.c
-@@ -2269,6 +2269,16 @@ skip_vfb:
+@@ -2275,6 +2275,16 @@ skip_vfb:
              b_info->u.hvm.vga.kind = l ? LIBXL_VGA_INTERFACE_TYPE_STD :
                                           LIBXL_VGA_INTERFACE_TYPE_CIRRUS;
  
