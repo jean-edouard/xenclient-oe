@@ -204,7 +204,7 @@ Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
      switch(b_info->type) {
      case LIBXL_DOMAIN_TYPE_HVM:
          kernel_basename = libxl_basename(b_info->kernel);
-@@ -1949,64 +1955,38 @@ skip_nic:
+@@ -1955,64 +1961,38 @@ skip_nic:
          fprintf(stderr, "WARNING: vif2: netchannel2 is deprecated and not supported by xl\n");
      }
  
@@ -301,7 +301,7 @@ Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
          }
      }
  
-@@ -3008,8 +2988,6 @@ start:
+@@ -3014,8 +2994,6 @@ start:
                   */
                  dom_info->console_autoconnect = 0;
  
@@ -310,7 +310,7 @@ Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
                  if (common_domname
                      && strcmp(d_config.c_info.name, common_domname)) {
                      d_config.c_info.name = strdup(common_domname);
-@@ -3685,13 +3663,17 @@ static void unpause_domain(uint32_t domi
+@@ -3691,13 +3669,17 @@ static void unpause_domain(uint32_t domi
  static void destroy_domain(uint32_t domid, int force)
  {
      int rc;

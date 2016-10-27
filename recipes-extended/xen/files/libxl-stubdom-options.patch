@@ -62,7 +62,7 @@ Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/xl_cmdimpl.c
 +++ xen-4.6.1/tools/libxl/xl_cmdimpl.c
-@@ -2161,6 +2161,17 @@ skip_nic:
+@@ -2167,6 +2167,17 @@ skip_nic:
      }
  
  
