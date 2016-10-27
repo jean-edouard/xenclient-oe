@@ -1,2 +1,2 @@
-SELINUX=disabled
+SELINUX=permissive
 SELINUXTYPE=xc_policy
