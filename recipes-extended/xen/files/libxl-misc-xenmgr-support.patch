@@ -36,7 +36,7 @@ Index: xen-4.6.1/tools/libxl/libxl.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl.c
 +++ xen-4.6.1/tools/libxl/libxl.c
-@@ -3481,6 +3481,8 @@ void libxl__device_nic_add(libxl__egc *e
+@@ -3479,6 +3479,8 @@ void libxl__device_nic_add(libxl__egc *e
      aodev->action = LIBXL__DEVICE_ACTION_ADD;
      libxl__wait_device_connection(egc, aodev);
  
@@ -45,7 +45,7 @@ Index: xen-4.6.1/tools/libxl/libxl.c
      rc = 0;
  out:
      libxl__xs_transaction_abort(gc, &t);
-@@ -4173,6 +4175,9 @@ int libxl__device_vfb_add(libxl__gc *gc,
+@@ -4171,6 +4173,9 @@ int libxl__device_vfb_add(libxl__gc *gc,
                                libxl__xs_kvs_of_flexarray(gc, back, back->count),
                                libxl__xs_kvs_of_flexarray(gc, front, front->count),
                                NULL);
@@ -55,7 +55,7 @@ Index: xen-4.6.1/tools/libxl/libxl.c
      rc = 0;
  out:
      return rc;
-@@ -6777,7 +6782,7 @@ int libxl_retrieve_domain_configuration(
+@@ -6775,7 +6780,7 @@ int libxl_retrieve_domain_configuration(
                      break;                                              \
              }                                                           \
                                                                          \
@@ -301,7 +301,7 @@ Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
          }
      }
  
-@@ -3014,8 +2994,6 @@ start:
+@@ -3018,8 +2998,6 @@ start:
                   */
                  dom_info->console_autoconnect = 0;
  
@@ -310,7 +310,7 @@ Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
                  if (common_domname
                      && strcmp(d_config.c_info.name, common_domname)) {
                      d_config.c_info.name = strdup(common_domname);
-@@ -3691,13 +3669,17 @@ static void unpause_domain(uint32_t domi
+@@ -3695,13 +3673,17 @@ static void unpause_domain(uint32_t domi
  static void destroy_domain(uint32_t domid, int force)
  {
      int rc;
