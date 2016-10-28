@@ -194,7 +194,7 @@ Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/xl_cmdimpl.c
 +++ xen-4.6.1/tools/libxl/xl_cmdimpl.c
-@@ -3704,6 +3704,39 @@ static void wait_for_domain_deaths(libxl
+@@ -3705,6 +3705,39 @@ static void wait_for_domain_deaths(libxl
      }
  }
  
@@ -234,7 +234,7 @@ Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
  static void shutdown_domain(uint32_t domid,
                              libxl_evgen_domain_death **deathw,
                              libxl_ev_user for_user,
-@@ -4790,6 +4823,43 @@ int main_destroy(int argc, char **argv)
+@@ -4791,6 +4824,43 @@ int main_destroy(int argc, char **argv)
      return 0;
  }
  
@@ -278,7 +278,7 @@ Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
  static int main_shutdown_or_reboot(int do_reboot, int argc, char **argv)
  {
      const char *what = do_reboot ? "reboot" : "shutdown";
-@@ -6329,6 +6399,51 @@ int main_domname(int argc, char **argv)
+@@ -6330,6 +6400,51 @@ int main_domname(int argc, char **argv)
      return 0;
  }
  
@@ -330,7 +330,7 @@ Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
  int main_rename(int argc, char **argv)
  {
      uint32_t domid;
-@@ -6379,7 +6494,15 @@ int main_trigger(int argc, char **argv)
+@@ -6380,7 +6495,15 @@ int main_trigger(int argc, char **argv)
          }
      }
  
