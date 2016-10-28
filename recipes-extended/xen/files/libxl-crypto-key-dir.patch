@@ -33,7 +33,7 @@ Index: xen-4.6.1/tools/libxl/libxl.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl.c
 +++ xen-4.6.1/tools/libxl/libxl.c
-@@ -2563,7 +2563,7 @@ static void device_disk_add(libxl__egc *
+@@ -2561,7 +2561,7 @@ static void device_disk_add(libxl__egc *
              case LIBXL_DISK_BACKEND_TAP:
                  if (dev == NULL) {
                      dev = libxl__blktap_devpath(gc, disk->pdev_path,
