@@ -1,0 +1,56 @@
+Index: qemu-1.4.0/xen-all.c
+===================================================================
+--- qemu-1.4.0.orig/xen-all.c
++++ qemu-1.4.0/xen-all.c
+@@ -117,10 +117,26 @@ typedef struct XenIOState {
+ 
+     Notifier exit;
+     Notifier suspend;
++    Notifier resume;
+ } XenIOState;
+ 
+ /* Xen specific function for piix pci */
+ 
++static void xenstore_write_acpi(struct xs_handle *xs, const char *acpi)
++{
++    char path [50];
++    if (xs == NULL) {
++        fprintf(stderr, "xenstore connection not initialized\n");
++        exit(1);
++    }
++
++    snprintf(path, sizeof(path), "/local/domain/%u/acpi-state", xen_domid);
++    if(!xs_write(xs, XBT_NULL, path, acpi, strlen(acpi))) {
++        fprintf(stderr, "error writing acpi\n");
++        exit(1);
++    }
++}
++
+ int xen_pci_slot_get_pirq(PCIDevice *pci_dev, int irq_num)
+ {
+     return irq_num + ((pci_dev->devfn >> 3) << 2);
+@@ -157,8 +173,14 @@ void xen_hvm_inject_msi(uint64_t addr, u
+ static void xen_suspend_notifier(Notifier *notifier, void *data)
+ {
+     xc_set_hvm_param(xen_xc, xen_domid, HVM_PARAM_ACPI_S_STATE, 3);
++    xenstore_write_acpi(xenstore, "s3");
+ }
+ 
++static void xen_resume_notifier(Notifier *notifier, void *data)
++{
++    xc_set_hvm_param(xen_xc, xen_domid, HVM_PARAM_ACPI_S_STATE, 0);
++    xenstore_write_acpi(xenstore, "s0");
++}
+ /* Xen Interrupt Controller */
+ 
+ static void xen_set_irq(void *opaque, int irq, int level)
+@@ -1194,6 +1216,9 @@ int xen_hvm_init(void)
+     state->suspend.notify = xen_suspend_notifier;
+     qemu_register_suspend_notifier(&state->suspend);
+ 
++    state->resume.notify = xen_resume_notifier;
++    qemu_register_wakeup_notifier(&state->resume);
++
+     // We need to tell the hypervisor what the domid of the device model is. 
+     // Usually, it's expecting dom0, but with a stubdomain, that is not the 
+     // case

@@ -54,6 +54,7 @@ SRC_URI += "file://xsa-126-unmediated-pci-command-register-access-in-qemu.patch;
             file://0036-qmp-v4v-char-driver.patch;striplevel=1 \
             file://0037-use-absolute-xenstore-nodes.patch;striplevel=1 \
             file://0038-exit-mainloop-on-reset.patch;striplevel=1 \
+            file://0039-implement-resume-notifier.patch;striplevel=1 \
             "
 
 SRC_URI[md5sum] = "78f13b774814b6b7ebcaf4f9b9204318"
