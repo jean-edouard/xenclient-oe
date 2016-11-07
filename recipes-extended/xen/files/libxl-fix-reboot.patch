@@ -133,7 +133,7 @@ Index: xen-4.6.1/tools/libxl/xl_cmdimpl.c
      if ( ret )
          goto error_out;
  
-@@ -3789,12 +3804,13 @@ static void reboot_domain(uint32_t domid
+@@ -3790,12 +3805,13 @@ static void reboot_domain(uint32_t domid
  
      fprintf(stderr, "Rebooting domain %d\n", domid);
      libxl_update_state(ctx, domid, "rebooting");
