@@ -170,15 +170,44 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl_dm.c
 +++ xen-4.6.1/tools/libxl/libxl_dm.c
-@@ -624,7 +624,7 @@ static int libxl__build_device_model_arg
+@@ -622,9 +622,7 @@ static int libxl__build_device_model_arg
+     if (state->saved_state) {
+         flexarray_vappend(dm_args, "-loadvm", state->saved_state, NULL);
      }
-     for (i = 0; b_info->extra && b_info->extra[i] != NULL; i++)
-         flexarray_append(dm_args, b_info->extra[i]);
+-    for (i = 0; b_info->extra && b_info->extra[i] != NULL; i++)
+-        flexarray_append(dm_args, b_info->extra[i]);
 -    flexarray_append(dm_args, "-M");
 +    flexarray_append(dm_args, "-machine");
      switch (b_info->type) {
      case LIBXL_DOMAIN_TYPE_PV:
          flexarray_append(dm_args, "xenpv");
+@@ -639,6 +637,8 @@ static int libxl__build_device_model_arg
+     default:
+         abort();
+     }
++    for (i = 0; b_info->extra && b_info->extra[i] != NULL; i++)
++        flexarray_append(dm_args, b_info->extra[i]);
+     flexarray_append(dm_args, NULL);
+     *args = (char **) flexarray_contents(dm_args);
+     flexarray_append(dm_envs, NULL);
+@@ -1061,8 +1061,6 @@ static int libxl__build_device_model_arg
+         flexarray_append(dm_args, "-incoming");
+         flexarray_append(dm_args, GCSPRINTF("fd:%d",*dm_state_fd));
+     }
+-    for (i = 0; b_info->extra && b_info->extra[i] != NULL; i++)
+-        flexarray_append(dm_args, b_info->extra[i]);
+ 
+     flexarray_append(dm_args, "-machine");
+     switch (b_info->type) {
+@@ -1206,6 +1204,8 @@ static int libxl__build_device_model_arg
+             break;
+         }
+     }
++    for (i = 0; b_info->extra && b_info->extra[i] != NULL; i++)
++        flexarray_append(dm_args, b_info->extra[i]);
+     flexarray_append(dm_args, NULL);
+     *args = (char **) flexarray_contents(dm_args);
+     flexarray_append(dm_envs, NULL);
 @@ -1328,7 +1328,7 @@ static int libxl__write_stub_dmargs(libx
      while (args[i] != NULL) {
          if (linux_stubdom ||
