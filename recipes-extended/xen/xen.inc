@@ -74,13 +74,13 @@ SRC_URI = "${XEN_SRC_URI};name=source \
     file://libxl-openxt-qemu-args.patch \
     file://libxl-openxt-xci-cpuid-signature.patch \
     file://libxl-pass-qemu-options-through-linux-stubdom-cmdline.patch \
-    file://libxl-openxt-specific-changes.patch \
+    file://libxl-openxt-tweaks.patch \
     file://libxl-domain-state.patch \
     file://libxl-fixup-cmdline-ops.patch \
     file://libxl-crypto-key-dir.patch \
     file://libxl-fix-reboot.patch \
     file://libxl-display-manager-support.patch \
-    file://libxl-misc-xenmgr-support.patch \
+    file://libxl-xenmgr-support.patch \
     file://libxl-stubdom-options.patch \
 "
 
