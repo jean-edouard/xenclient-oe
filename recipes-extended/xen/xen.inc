@@ -81,6 +81,7 @@ SRC_URI = "${XEN_SRC_URI};name=source \
     file://libxl-fix-reboot.patch \
     file://libxl-display-manager-support.patch \
     file://libxl-xenmgr-support.patch \
+    file://libxl-move-extra-qemu-args-to-the-end.patch \
     file://libxl-stubdom-options.patch \
 "
 
