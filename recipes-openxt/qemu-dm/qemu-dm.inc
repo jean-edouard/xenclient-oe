@@ -33,6 +33,7 @@ SRC_URI += "file://compile-time-stubdom-flag.patch \
             file://maintain-time-offset.patch \
             file://acpi-wakeup.patch \
             file://openxt-misc-fixes.patch \
+            file://qmp-v4v-char-driver.patch \
             file://use-relative-xenstore-nodes.patch \
             file://exit-mainloop-on-reset.patch \
             file://write-acpi-state-to-xenstore.patch \
