@@ -89,28 +89,17 @@ PATCHES
 
 Index: qemu-2.6.2/configure
 ===================================================================
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 --- qemu-2.6.2.orig/configure
 +++ qemu-2.6.2/configure
 @@ -300,6 +300,7 @@ coroutine=""
  coroutine_pool=""
-=======
---- qemu-1.4.0.orig/configure
-+++ qemu-1.4.0/configure
-@@ -227,6 +227,7 @@ libiscsi=""
- coroutine=""
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
  seccomp=""
  glusterfs=""
 +surfman="no"
  stubdom="no"
  atapipt="no"
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
  atapiptv4v="no"
 @@ -1118,6 +1119,10 @@ for opt do
-=======
-@@ -922,6 +923,10 @@ for opt do
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
    ;;
    --disable-openxt-stubdom) stubdom="no"
    ;;
@@ -120,7 +109,6 @@ Index: qemu-2.6.2/configure
 +  ;;
    --disable-gtk) gtk="no"
    ;;
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
    --enable-gtk) gtk="yes"
 @@ -4915,6 +4920,7 @@ echo "gcov enabled      $gcov"
  echo "OpenXT stubdomain support $stubdom"
@@ -132,19 +120,6 @@ Index: qemu-2.6.2/configure
  echo "TPM passthrough   $tpm_passthrough"
 @@ -5470,6 +5476,10 @@ if test "$atapiptv4v" = "yes" ; then
    echo "CONFIG_ATAPI_PT_V4V=y" >> $config_host_mak
-=======
-   esac
-@@ -3398,6 +3403,7 @@ echo "seccomp support   $seccomp"
- echo "coroutine backend $coroutine_backend"
- echo "GlusterFS support $glusterfs"
- echo "virtio-blk-data-plane $virtio_blk_data_plane"
-+echo "Surfman support   $surfman"
- echo "gcov              $gcov_tool"
- echo "gcov enabled      $gcov"
- echo "OpenXT Stubdomain support   $stubdom"
-@@ -3820,6 +3826,12 @@ if test "$trace_default" = "yes"; then
-   echo "CONFIG_TRACE_DEFAULT=y" >> $config_host_mak
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
  fi
  
 +if test "$surfman" = "yes"; then
@@ -156,16 +131,10 @@ Index: qemu-2.6.2/configure
    echo "HOST_USB=libusb legacy" >> $config_host_mak
 Index: qemu-2.6.2/include/hw/xen/xen.h
 ===================================================================
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 --- qemu-2.6.2.orig/include/hw/xen/xen.h
 +++ qemu-2.6.2/include/hw/xen/xen.h
 @@ -45,6 +45,8 @@ void xen_modified_memory(ram_addr_t star
  #endif
-=======
---- qemu-1.4.0.orig/hw/xen.h
-+++ qemu-1.4.0/hw/xen.h
-@@ -54,6 +54,8 @@ void xen_modified_memory(ram_addr_t star
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
  
  void xen_register_framebuffer(struct MemoryRegion *mr);
 +struct MemoryRegion *xen_get_framebuffer(void);
@@ -175,16 +144,9 @@ Index: qemu-2.6.2/include/hw/xen/xen.h
  enum xenstore_pm_type {
 Index: qemu-2.6.2/include/sysemu/sysemu.h
 ===================================================================
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 --- qemu-2.6.2.orig/include/sysemu/sysemu.h
 +++ qemu-2.6.2/include/sysemu/sysemu.h
 @@ -138,8 +138,8 @@ typedef enum DisplayType
-=======
---- qemu-1.4.0.orig/include/sysemu/sysemu.h
-+++ qemu-1.4.0/include/sysemu/sysemu.h
-@@ -90,8 +90,8 @@ typedef enum DisplayType
-     DT_CURSES,
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
      DT_SDL,
      DT_GTK,
      DT_NOGRAPHIC,
@@ -194,12 +156,8 @@ Index: qemu-2.6.2/include/sysemu/sysemu.h
  } DisplayType;
  
  extern int autostart;
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 @@ -151,6 +151,7 @@ typedef enum {
  
-=======
-@@ -104,6 +104,7 @@ typedef enum {
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
  extern int vga_interface_type;
  #define xenfb_enabled (vga_interface_type == VGA_XENFB)
 +#define xt_enabled (vga_interface_type == VGA_XT)
@@ -208,26 +166,15 @@ Index: qemu-2.6.2/include/sysemu/sysemu.h
  extern int graphic_height;
 Index: qemu-2.6.2/include/ui/console.h
 ===================================================================
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 --- qemu-2.6.2.orig/include/ui/console.h
 +++ qemu-2.6.2/include/ui/console.h
 @@ -453,6 +453,11 @@ static inline int vnc_display_pw_expire(
-=======
---- qemu-1.4.0.orig/include/ui/console.h
-+++ qemu-1.4.0/include/ui/console.h
-@@ -501,6 +501,12 @@ static inline int vnc_display_pw_expire(
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
  };
  #endif
  
 +#ifdef CONFIG_SURFMAN
 +/* surfman.c */
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 +void surfman_display_init(void);
-=======
-+void surfman_display_init(DisplayState *ds);
-+void surfman_display_deinit(DisplayState *ds);
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
 +#endif
 +
  /* curses.c */
@@ -235,16 +182,9 @@ Index: qemu-2.6.2/include/ui/console.h
  
 Index: qemu-2.6.2/ui/Makefile.objs
 ===================================================================
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 --- qemu-2.6.2.orig/ui/Makefile.objs
 +++ qemu-2.6.2/ui/Makefile.objs
 @@ -17,6 +17,7 @@ common-obj-$(CONFIG_CURSES) += curses.o
-=======
---- qemu-1.4.0.orig/ui/Makefile.objs
-+++ qemu-1.4.0/ui/Makefile.objs
-@@ -14,6 +14,7 @@ common-obj-$(CONFIG_COCOA) += cocoa.o
- common-obj-$(CONFIG_CURSES) += curses.o
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
  common-obj-$(CONFIG_VNC) += $(vnc-obj-y)
  common-obj-$(CONFIG_GTK) += gtk.o x_keymap.o
  common-obj-$(CONFIG_XEN) += xen-input.o
@@ -254,19 +194,11 @@ Index: qemu-2.6.2/ui/Makefile.objs
  sdl.mo-objs := sdl.o sdl_zoom.o
 Index: qemu-2.6.2/ui/qemu-pixman.c
 ===================================================================
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 --- qemu-2.6.2.orig/ui/qemu-pixman.c
 +++ qemu-2.6.2/ui/qemu-pixman.c
 @@ -70,7 +70,17 @@ pixman_format_code_t qemu_default_pixman
          case 15:
              return PIXMAN_x1r5g5b5;
-=======
---- qemu-1.4.0.orig/ui/console.c
-+++ qemu-1.4.0/ui/console.c
-@@ -1676,15 +1676,17 @@ PixelFormat qemu_default_pixelformat(int
-             pf.bbits = 5;
-             break;
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
          case 16:
 +#ifdef CONFIG_SURFMAN
 +            /*
@@ -285,13 +217,8 @@ Index: qemu-2.6.2/ui/qemu-pixman.c
 Index: qemu-2.6.2/ui/surfman.c
 ===================================================================
 --- /dev/null
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 +++ qemu-2.6.2/ui/surfman.c
 @@ -0,0 +1,362 @@
-=======
-+++ qemu-1.4.0/ui/surfman.c
-@@ -0,0 +1,368 @@
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
 +/*
 + * QEMU graphical console
 + *
@@ -605,11 +532,6 @@ Index: qemu-2.6.2/ui/surfman.c
 +    .dpy_get_display_limits = surfman_dpy_get_display_limits
 +};
 +
-+void surfman_display_deinit(DisplayState *ds)
-+{
-+    dmbus_service_disconnect(ss->dmbus_service);
-+}
-+
 +/**
 + * Initializes a Surfman multiplexed display, creating the DisplayChangeListener object
 + * that tracks display events.
@@ -662,7 +584,6 @@ Index: qemu-2.6.2/ui/surfman.c
 Index: qemu-2.6.2/include/ui/surfman.h
 ===================================================================
 --- /dev/null
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 +++ qemu-2.6.2/include/ui/surfman.h
 @@ -0,0 +1,139 @@
 +/*
@@ -690,10 +611,6 @@ Index: qemu-2.6.2/include/ui/surfman.h
 + * THE SOFTWARE.
 + */
 +
-=======
-+++ qemu-1.4.0/ui/surfman.h
-@@ -0,0 +1,118 @@
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
 +#ifndef _SURFMAN_H_
 +# define _SURFMAN_H_
 +
@@ -810,17 +727,10 @@ Index: qemu-2.6.2/include/ui/surfman.h
 +
 Index: qemu-2.6.2/vl.c
 ===================================================================
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 --- qemu-2.6.2.orig/vl.c
 +++ qemu-2.6.2/vl.c
 @@ -129,7 +129,7 @@ static const char *data_dir[16];
  static int data_dir_idx;
-=======
---- qemu-1.4.0.orig/vl.c
-+++ qemu-1.4.0/vl.c
-@@ -182,7 +182,7 @@ int main(int argc, char **argv)
- static const char *data_dir;
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
  const char *bios_name = NULL;
  enum vga_retrace_method vga_retrace_method = VGA_RETRACE_DUMB;
 -DisplayType display_type = DT_XEN;
@@ -828,15 +738,8 @@ Index: qemu-2.6.2/vl.c
  int request_opengl = -1;
  int display_opengl;
  static int display_remote;
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 @@ -2222,6 +2222,13 @@ static DisplayType select_display(const
          error_report("GTK support is disabled");
-=======
- const char* keyboard_layout = NULL;
- ram_addr_t ram_size;
-@@ -2207,6 +2207,13 @@ static DisplayType select_display(const
-         fprintf(stderr, "Curses support is disabled\n");
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
          exit(1);
  #endif
 +    } else if (strstart(p, "surfman", &opts)) {
@@ -849,17 +752,8 @@ Index: qemu-2.6.2/vl.c
      } else if (strstart(p, "none", &opts)) {
          display = DT_NONE;
      } else {
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 @@ -4590,9 +4597,12 @@ int main(int argc, char **argv, char **e
          gtk_display_init(ds, full_screen, grab_on_hover);
-=======
-@@ -4256,9 +4282,12 @@ int main(int argc, char **argv, char **e
-=======
-@@ -4256,9 +4263,12 @@ int main(int argc, char **argv, char **e
->>>>>>> Deinit xen-input as well as surfman:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
-         cocoa_display_init(ds, full_screen);
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
          break;
  #endif
 -    case DT_XEN:
@@ -872,34 +766,11 @@ Index: qemu-2.6.2/vl.c
      default:
          break;
      }
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 Index: qemu-2.6.2/xen-hvm.c
 ===================================================================
 --- qemu-2.6.2.orig/xen-hvm.c
 +++ qemu-2.6.2/xen-hvm.c
 @@ -40,7 +40,21 @@
-=======
-@@ -4332,6 +4361,9 @@ int main(int argc, char **argv, char **e
-=======
-@@ -4332,7 +4342,10 @@ int main(int argc, char **argv, char **e
->>>>>>> Deinit xen-input as well as surfman:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
- 
-     resume_all_vcpus();
-     main_loop();
-+#if defined(CONFIG_SURFMAN)
-     xen_input_deinit();
-+    surfman_display_deinit(ds);
-+#endif
-     bdrv_close_all();
-     pause_all_vcpus();
-     res_free();
-Index: qemu-1.4.0/xen-all.c
-===================================================================
---- qemu-1.4.0.orig/xen-all.c
-+++ qemu-1.4.0/xen-all.c
-@@ -37,7 +37,21 @@
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
  #endif
  
  static MemoryRegion ram_memory, ram_640k, ram_lo, ram_hi;
@@ -921,11 +792,7 @@ Index: qemu-1.4.0/xen-all.c
  static bool xen_in_migration;
  
  /* Compatibility with older version */
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 @@ -362,10 +376,16 @@ go_physmap:
-=======
-@@ -319,10 +333,14 @@ go_physmap:
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
  
      QLIST_INSERT_HEAD(&state->physmap, physmap, list);
  
@@ -943,11 +810,7 @@ Index: qemu-1.4.0/xen-all.c
  
      snprintf(path, sizeof(path),
              "/local/domain/0/device-model/%d/physmap/%"PRIx64"/start_addr",
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/surfman-dcl.patch
 @@ -1354,9 +1374,85 @@ void destroy_hvm_domain(bool reboot)
-=======
-@@ -1210,9 +1228,86 @@ void destroy_hvm_domain(bool reboot)
->>>>>>> qemu: close surfman dmbus connection before dying:recipes-openxt/qemu-dm/qemu-dm-1.4/0019-surfman-dcl.patch
      }
  }
  

@@ -63,17 +63,10 @@ PATCHES
 
 Index: qemu-2.6.2/include/sysemu/sysemu.h
 ===================================================================
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/switcher.patch
 --- qemu-2.6.2.orig/include/sysemu/sysemu.h
 +++ qemu-2.6.2/include/sysemu/sysemu.h
 @@ -139,6 +139,7 @@ typedef enum DisplayType
      DT_GTK,
-=======
---- qemu-1.4.0.orig/include/sysemu/sysemu.h
-+++ qemu-1.4.0/include/sysemu/sysemu.h
-@@ -91,6 +91,7 @@ typedef enum DisplayType
-     DT_SDL,
->>>>>>> Deinit xen-input as well as surfman:recipes-openxt/qemu-dm/qemu-dm-1.4/0008-switcher.patch
      DT_NOGRAPHIC,
      DT_NONE,
 +    DT_XEN /* OpenXT Display */
@@ -82,28 +75,9 @@ Index: qemu-2.6.2/include/sysemu/sysemu.h
  extern int autostart;
 Index: qemu-2.6.2/ui/Makefile.objs
 ===================================================================
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/switcher.patch
 --- qemu-2.6.2.orig/ui/Makefile.objs
 +++ qemu-2.6.2/ui/Makefile.objs
 @@ -16,6 +16,7 @@ common-obj-$(CONFIG_COCOA) += cocoa.o
-=======
---- qemu-1.4.0.orig/include/ui/console.h
-+++ qemu-1.4.0/include/ui/console.h
-@@ -59,6 +59,7 @@ void qemu_remove_led_event_handler(QEMUP
- void kbd_put_keycode(int keycode);
- void kbd_put_ledstate(int ledstate);
- void kbd_mouse_event(int dx, int dy, int dz, int buttons_state);
-+void kbd_mouse_event_absolute(int x, int y, int dz, int buttons_state);
- 
- /* Does the current mouse generate absolute events */
- int kbd_mouse_is_absolute(void);
-Index: qemu-1.4.0/ui/Makefile.objs
-===================================================================
---- qemu-1.4.0.orig/ui/Makefile.objs
-+++ qemu-1.4.0/ui/Makefile.objs
-@@ -13,6 +13,7 @@ common-obj-$(CONFIG_SDL) += sdl.o sdl_zo
- common-obj-$(CONFIG_COCOA) += cocoa.o
->>>>>>> Deinit xen-input as well as surfman:recipes-openxt/qemu-dm/qemu-dm-1.4/0008-switcher.patch
  common-obj-$(CONFIG_CURSES) += curses.o
  common-obj-$(CONFIG_VNC) += $(vnc-obj-y)
  common-obj-$(CONFIG_GTK) += gtk.o x_keymap.o
@@ -113,7 +87,6 @@ Index: qemu-1.4.0/ui/Makefile.objs
  sdl.mo-objs := sdl.o sdl_zoom.o
 Index: qemu-2.6.2/ui/xen-input.c
 ===================================================================
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/switcher.patch
 --- /dev/null
 +++ qemu-2.6.2/ui/xen-input.c
 @@ -0,0 +1,563 @@
@@ -136,46 +109,6 @@ Index: qemu-2.6.2/ui/xen-input.c
 + */
 +
 +#include "qemu/osdep.h"
-=======
---- qemu-1.4.0.orig/ui/input.c
-+++ qemu-1.4.0/ui/input.c
-@@ -447,6 +447,30 @@ void kbd_mouse_event(int dx, int dy, int
-     }
- }
- 
-+void kbd_mouse_event_absolute(int x, int y, int dz, int buttons_state)
-+{
-+    QEMUPutMouseEntry *entry;
-+    QEMUPutMouseEvent *mouse_event;
-+    void *mouse_event_opaque;
-+
-+    if (!runstate_is_running() && !runstate_check(RUN_STATE_SUSPENDED)) {
-+        return;
-+    }
-+
-+    if (!kbd_mouse_is_absolute()) {
-+        return;
-+    }
-+
-+    entry = QTAILQ_FIRST(&mouse_handlers);
-+
-+    mouse_event = entry->qemu_put_mouse_event;
-+    mouse_event_opaque = entry->qemu_put_mouse_event_opaque;
-+
-+    if (mouse_event && entry->qemu_put_mouse_event_absolute) {
-+        mouse_event(mouse_event_opaque, x, y, dz, buttons_state);
-+    }
-+}
-+
- int kbd_mouse_is_absolute(void)
- {
-     if (QTAILQ_EMPTY(&mouse_handlers)) {
-Index: qemu-1.4.0/ui/xen-input.c
-===================================================================
---- /dev/null
-+++ qemu-1.4.0/ui/xen-input.c
-@@ -0,0 +1,497 @@
->>>>>>> Deinit xen-input as well as surfman:recipes-openxt/qemu-dm/qemu-dm-1.4/0008-switcher.patch
 +#include <linux/input.h>
 +#include <stdlib.h>
 +#include "qemu-common.h"
@@ -659,11 +592,6 @@ Index: qemu-1.4.0/ui/xen-input.c
 +    .input_wakeup = xen_input_wakeup,
 +};
 +
-+void xen_input_deinit(void)
-+{
-+    dmbus_service_disconnect(input.service);
-+}
-+
 +void xen_input_init(void)
 +{
 +    printf("initialize input\n");
@@ -728,7 +656,6 @@ Index: qemu-1.4.0/ui/xen-input.c
 Index: qemu-2.6.2/include/ui/xen-input.h
 ===================================================================
 --- /dev/null
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/switcher.patch
 +++ qemu-2.6.2/include/ui/xen-input.h
 @@ -0,0 +1,48 @@
 +/*
@@ -749,17 +676,12 @@ Index: qemu-2.6.2/include/ui/xen-input.h
 + * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 + */
 +
-=======
-+++ qemu-1.4.0/ui/xen-input.h
-@@ -0,0 +1,31 @@
->>>>>>> Deinit xen-input as well as surfman:recipes-openxt/qemu-dm/qemu-dm-1.4/0008-switcher.patch
 +#ifndef UI_XEN_INPUT_H_
 +# define UI_XEN_INPUT_H_
 +
 +# include "xen-dmbus.h"
 +
 +void xen_input_init(void);
-+void xen_input_deinit(void);
 +void xen_input_abs_enabled(int enabled);
 +
 +typedef void (*xen_input_direct_event_cb_t)(void *opaque,
@@ -786,32 +708,18 @@ Index: qemu-2.6.2/include/ui/xen-input.h
 +#endif /* !UI_XEN_INPUT_H_ */
 Index: qemu-2.6.2/vl.c
 ===================================================================
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/switcher.patch
 --- qemu-2.6.2.orig/vl.c
 +++ qemu-2.6.2/vl.c
 @@ -111,6 +111,7 @@ int main(int argc, char **argv)
  #include "sysemu/arch_init.h"
-=======
---- qemu-1.4.0.orig/vl.c
-+++ qemu-1.4.0/vl.c
-@@ -169,6 +169,7 @@ int main(int argc, char **argv)
->>>>>>> Deinit xen-input as well as surfman:recipes-openxt/qemu-dm/qemu-dm-1.4/0008-switcher.patch
  
  #include "ui/qemu-spice.h"
 +#include "ui/xen-input.h"
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/switcher.patch
  #include "qapi/string-input-visitor.h"
  #include "qapi/opts-visitor.h"
  #include "qom/object_interfaces.h"
 @@ -128,7 +129,7 @@ static const char *data_dir[16];
  static int data_dir_idx;
-=======
- 
- //#define DEBUG_NET
- //#define DEBUG_SLIRP
-@@ -181,7 +182,7 @@ int main(int argc, char **argv)
- static const char *data_dir;
->>>>>>> Deinit xen-input as well as surfman:recipes-openxt/qemu-dm/qemu-dm-1.4/0008-switcher.patch
  const char *bios_name = NULL;
  enum vga_retrace_method vga_retrace_method = VGA_RETRACE_DUMB;
 -DisplayType display_type = DT_DEFAULT;
@@ -819,15 +727,8 @@ Index: qemu-2.6.2/vl.c
  int request_opengl = -1;
  int display_opengl;
  static int display_remote;
-<<<<<<< HEAD:recipes-openxt/qemu-dm/qemu-dm-2.6.2/switcher.patch
 @@ -4589,6 +4590,9 @@ int main(int argc, char **argv, char **e
          gtk_display_init(ds, full_screen, grab_on_hover);
-=======
- const char* keyboard_layout = NULL;
- ram_addr_t ram_size;
-@@ -4255,6 +4256,9 @@ int main(int argc, char **argv, char **e
-         cocoa_display_init(ds, full_screen);
->>>>>>> Deinit xen-input as well as surfman:recipes-openxt/qemu-dm/qemu-dm-1.4/0008-switcher.patch
          break;
  #endif
 +    case DT_XEN:
@@ -836,11 +737,3 @@ Index: qemu-2.6.2/vl.c
      default:
          break;
      }
-@@ -4328,6 +4332,7 @@ int main(int argc, char **argv, char **e
- 
-     resume_all_vcpus();
-     main_loop();
-+    xen_input_deinit();
-     bdrv_close_all();
-     pause_all_vcpus();
-     res_free();
