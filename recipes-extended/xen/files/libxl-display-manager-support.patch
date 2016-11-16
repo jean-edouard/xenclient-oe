@@ -74,7 +74,7 @@ Index: xen-4.6.1/tools/libxl/libxl_internal.h
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl_internal.h
 +++ xen-4.6.1/tools/libxl/libxl_internal.h
-@@ -1635,6 +1635,8 @@ _hidden int libxl__wait_for_device_model
+@@ -1636,6 +1636,8 @@ _hidden int libxl__wait_for_device_model
  
  _hidden int libxl__destroy_device_model(libxl__gc *gc, uint32_t domid);
  

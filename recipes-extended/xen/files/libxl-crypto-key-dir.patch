@@ -33,7 +33,7 @@ Index: xen-4.6.1/tools/libxl/libxl.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl.c
 +++ xen-4.6.1/tools/libxl/libxl.c
-@@ -2561,7 +2561,7 @@ static void device_disk_add(libxl__egc *
+@@ -2570,7 +2570,7 @@ static void device_disk_add(libxl__egc *
              case LIBXL_DISK_BACKEND_TAP:
                  if (dev == NULL) {
                      dev = libxl__blktap_devpath(gc, disk->pdev_path,
@@ -85,7 +85,7 @@ Index: xen-4.6.1/tools/libxl/libxl_internal.h
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl_internal.h
 +++ xen-4.6.1/tools/libxl/libxl_internal.h
-@@ -1685,7 +1685,8 @@ _hidden int libxl__blktap_enabled(libxl_
+@@ -1686,7 +1686,8 @@ _hidden int libxl__blktap_enabled(libxl_
   */
  _hidden char *libxl__blktap_devpath(libxl__gc *gc,
                                      const char *disk,

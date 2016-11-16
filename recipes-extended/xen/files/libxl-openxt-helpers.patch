@@ -44,7 +44,7 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl_dm.c
 +++ xen-4.6.1/tools/libxl/libxl_dm.c
-@@ -1489,6 +1489,30 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+@@ -1489,6 +1489,41 @@ void libxl__spawn_stub_dm(libxl__egc *eg
      if (ret)
          goto out;
      uint32_t dm_domid = sdss->pvqemu.guest_domid;
@@ -72,6 +72,17 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
 +                                  libxl__xs_get_dompath(gc, dm_domid)),
 +                   "%d", pid);
 +
++    /* OpenXT: Start the audio helper */
++    pid = fork();
++    if (pid == -1)
++        LOG(ERROR, "Failed to fork");
++    else if (pid == 0)
++        execl(AUDIO_HELPER_PATH, AUDIO_HELPER_PATH, libxl__sprintf(gc, "%d", guest_domid), libxl__sprintf(gc, "%d", dm_domid), NULL);
++    libxl__xs_write(gc, XBT_NULL,
++                   libxl__sprintf(gc, "%s/audio-helper-pid",
++                                  libxl__xs_get_dompath(gc, dm_domid)),
++                   "%d", pid);
++
      ret = libxl__domain_build(gc, dm_config, dm_domid, stubdom_state);
      if (ret)
          goto out;
@@ -79,7 +90,7 @@ Index: xen-4.6.1/tools/libxl/libxl.c
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl.c
 +++ xen-4.6.1/tools/libxl/libxl.c
-@@ -1629,6 +1629,27 @@ void libxl__destroy_domid(libxl__egc *eg
+@@ -1629,6 +1629,36 @@ void libxl__destroy_domid(libxl__egc *eg
  
          libxl__qmp_cleanup(gc, domid);
      }
@@ -103,7 +114,16 @@ Index: xen-4.6.1/tools/libxl/libxl.c
 +            LOG(ERROR, "Cannot get atapi-pt_helper pid for domain %d", dm_domid);
 +        else
 +            kill(strtol(pid, NULL, 10), SIGKILL);
-+    }
++
++        /* OpenXT: Kill audio-helper */
++        pid = libxl__xs_read(gc, XBT_NULL,
++                             libxl__sprintf(gc,
++                                            "/local/domain/%d/audio-helper-pid", dm_domid));
++        if (!pid)
++            LOG(ERROR, "Cannot get audio_helper pid for domain %d", dm_domid);
++        else
++            kill(strtol(pid, NULL, 10), SIGKILL);
++}
      dis->drs.ao = ao;
      dis->drs.domid = domid;
      dis->drs.callback = devices_destroy_cb;
@@ -111,12 +131,13 @@ Index: xen-4.6.1/tools/libxl/libxl_internal.h
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl_internal.h
 +++ xen-4.6.1/tools/libxl/libxl_internal.h
-@@ -115,6 +115,9 @@
+@@ -115,6 +115,10 @@
  #define TAP_DEVICE_SUFFIX "-emu"
  #define DOMID_XS_PATH "domid"
  
 +#define QMP_HELPER_PATH "/usr/lib/xen/bin/qmp_helper"
 +#define ATAPI_PT_HELPER_PATH "/usr/lib/xen/bin/atapi_pt_helper"
++#define AUDIO_HELPER_PATH "/usr/lib/xen/bin/audio_helper_start"
 +
  #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
  
