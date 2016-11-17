@@ -1,3 +1,40 @@
+################################################################################
+SHORT DESCRIPTION:
+################################################################################
+Support stubdom_memory and stubdom_cmdline options in libxl
+
+################################################################################
+LONG DESCRIPTION:
+################################################################################
+XenMgr allows the user to configure the memory of the stubdom and pass additonal
+kernel commandline args.  This patch allows libxl to support those features by
+parsing them from the xl domain config file and properly formatting them during
+stubdom creation.
+
+################################################################################
+CHANGELOG
+################################################################################
+Authors:
+Chris Rogers <rogersc@ainfosec.com>
+
+################################################################################
+REMOVAL
+################################################################################
+This patch should be removed if the stubdom work is upstreamed.
+
+################################################################################
+UPSTREAM PLAN
+################################################################################
+Should be upstreamed with the rest of stubdom work when appropriate.
+
+################################################################################
+INTERNAL DEPENDENCIES
+################################################################################
+
+################################################################################
+PATCHES
+################################################################################
+
 Index: xen-4.6.1/tools/libxl/libxl_types.idl
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl_types.idl
