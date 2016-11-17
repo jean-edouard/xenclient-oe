@@ -177,3 +177,12 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
          if (libxl_defbool_val(b_info->u.hvm.gfx_passthru)) {
              flexarray_append(dm_args, "-gfx_passthru");
          }
+@@ -1128,7 +1116,7 @@ static int libxl__build_device_model_arg
+                 else if (b_info->stubdomain_version == LIBXL_STUBDOMAIN_VERSION_LINUX)
+                     drive = libxl__sprintf
+                         (gc, "file=%s,if=ide,index=%d,media=cdrom,cache=writeback,format=%s,id=ide-%i",
+-                         "/dev/xvdc", disk, "host_cdrom", dev_number);
++                         "/dev/xvdc", disk, "file", dev_number);
+                 else
+                     drive = libxl__sprintf
+                         (gc, "file=%s,if=ide,index=%d,readonly=%s,media=cdrom,format=%s,cache=writeback,id=ide-%i",
