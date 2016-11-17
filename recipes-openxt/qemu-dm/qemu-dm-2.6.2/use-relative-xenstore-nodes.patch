@@ -1,3 +1,43 @@
+################################################################################
+SHORT DESCRIPTION:
+################################################################################
+Use relative paths instead of absolute ones for xenstore device model nodes.
+
+################################################################################
+LONG DESCRIPTION:
+################################################################################
+Qemu seems to assume the device model is running in dom0, and therefore harcodes
+xenstore device model paths to /local/domain/0.
+This doesn't make sense when using a stubdomain.
+When a the xenstore path doesn't start with a slash, xenstore automatically
+prepends it with "/local/domain/<domid>", where <domid> is the caller domid.
+So this patch effectively doesn't change anything for qemu instances running in
+dom0, but fixes the paths for other domains.
+
+################################################################################
+CHANGELOG
+################################################################################
+Author: Jed Lejosne, lejosnej@ainfosec.com, 11/17/2016
+
+################################################################################
+REMOVAL
+################################################################################
+If it gets upstreamed.
+
+################################################################################
+UPSTREAM PLAN
+################################################################################
+Yes, to this day, upstream Qemu still uses those bogus absolute paths.
+
+################################################################################
+INTERNAL DEPENDENCIES
+################################################################################
+libxl.
+xenvm has been written to work around this bug and won't work with that fix in.
+
+################################################################################
+PATCHES
+################################################################################
 Index: qemu-2.6.2/xen-hvm.c
 ===================================================================
 --- qemu-2.6.2.orig/xen-hvm.c
