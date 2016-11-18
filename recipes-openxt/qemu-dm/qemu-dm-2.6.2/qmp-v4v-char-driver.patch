@@ -10,7 +10,7 @@ Index: qemu-2.6.2/qemu-char.c
  
  #ifndef _WIN32
  #include <sys/times.h>
-@@ -2488,6 +2489,215 @@ err1:
+@@ -2488,6 +2489,223 @@ err1:
  
  
  /***********************************************************/
@@ -88,15 +88,6 @@ Index: qemu-2.6.2/qemu-char.c
 +    }
 +}
 +
-+static void v4v_chr_connect(CharDriverState *chr)
-+{
-+    V4vCharDriver *s = chr->opaque;
-+
-+    v4v_chr_update_read_handler(chr);
-+    qemu_chr_be_generic_open(chr);
-+    s->connected = 1;
-+}
-+
 +static gboolean v4v_chr_read(QIOChannel *chan, GIOCondition cond, void *opaque)
 +{
 +    CharDriverState *chr = opaque;
@@ -114,13 +105,26 @@ Index: qemu-2.6.2/qemu-char.c
 +    }
 +    if (s->connected == 0 && !strncmp((char*)(s->buf), V4V_MAGIC_CONNECT, 4)) {
 +        fprintf(stderr, "v4v_recvfrom() returned V4V_MAGIC_CONNECT, connecting.\n");
-+        v4v_chr_connect(chr);
++        v4v_chr_update_read_handler(chr);
++        qemu_chr_be_event(chr, CHR_EVENT_OPENED);
++        if (!chr->fd_in_tag) {
++            chr->fd_in_tag = io_add_watch_poll(s->ioc,
++                                               v4v_chr_read_poll,
++                                               v4v_chr_read, chr);
++        }
++        s->connected = 1;
 +        return FALSE;
 +    }
 +    if (s->connected == 1 && !strncmp((char*)(s->buf), V4V_MAGIC_DISCONNECT, 4)) {
++        v4v_chr_update_read_handler(chr);
++        qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
++        if (!chr->fd_in_tag) {
++            chr->fd_in_tag = io_add_watch_poll(s->ioc,
++                                               v4v_chr_read_poll,
++                                               v4v_chr_read, chr);
++        }
 +        fprintf(stderr, "v4v_recvfrom() returned V4V_MAGIC_DISCONNECT, closing.\n");
 +        s->connected = 0;
-+        qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
 +        return FALSE;
 +    }
 +
@@ -135,21 +139,24 @@ Index: qemu-2.6.2/qemu-char.c
 +    return TRUE;
 +}
 +
++static GSource *v4v_chr_add_watch(CharDriverState *chr, GIOCondition cond)
++{
++    V4vCharDriver *s = chr->opaque;
++    return qio_channel_create_watch(s->ioc, cond);
++}
++
 +static void v4v_chr_close(CharDriverState *chr)
 +{
 +    V4vCharDriver *s = chr->opaque;
 +
++    /* TODO should call close() internally on v4v fd */
 +    remove_fd_in_watch(chr);
-+
-+    if (s->fd >= 0) {
-+        v4v_close(s->fd);
-+    }
-+
-+    g_free(s);
 +
 +    if (s->ioc) {
 +        object_unref(OBJECT(s->ioc));
 +    }
++
++    g_free(s);
 +
 +    qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
 +}
@@ -161,11 +168,11 @@ Index: qemu-2.6.2/qemu-char.c
 +{
 +    CharDriverState *chr = NULL;
 +    V4vCharDriver *s = NULL;
++    ChardevCommon *common = backend->u.v4v.data;
 +    uint32_t v4v_ring_size = V4V_CHARDRV_RING_SIZE;
 +    int fd = -1;
 +
-+    chr = g_malloc0(sizeof(CharDriverState));
-+    s = g_malloc0(sizeof(V4vCharDriver));
++    s = g_new0(V4vCharDriver, 1);
 +
 +    s->local_addr.port = V4V_CHARDRV_PORT;
 +    s->local_addr.domain = V4V_DOMID_ANY;
@@ -176,23 +183,29 @@ Index: qemu-2.6.2/qemu-char.c
 +    if (fd < 0) {
 +        error_setg(errp, "%s cannot create v4v socket - err: %d",
 +                   V4V_CHARDRV_NAME, fd);
-+        goto return_err;
++        return NULL;
 +    }
-+
-+    s->ioc = QIO_CHANNEL(qio_channel_file_new_fd(fd));
 +
 +    if (ioctl(fd, V4VIOCSETRINGSIZE, &v4v_ring_size)) {
 +        error_setg(errp,
 +                   "%s failed to set ring size v4v socket - err: %d",
 +                   V4V_CHARDRV_NAME, errno);
-+        goto return_err;
++        close(fd);
++        return NULL;
 +    }
 +
 +    if (v4v_bind(fd, &s->local_addr, 0)) {
 +        error_setg(errp,
 +                   "%s failed to bind v4v socket - err: %d",
 +                   V4V_CHARDRV_NAME, errno);
-+        goto return_err;
++        close(fd);
++        return NULL;
++    }
++
++    chr = qemu_chr_alloc(common, errp);
++    if (!chr) {
++        close(fd);
++        return NULL;
 +    }
 +
 +    s->fd = fd;
@@ -202,31 +215,26 @@ Index: qemu-2.6.2/qemu-char.c
 +    chr->chr_write = v4v_chr_write;
 +    chr->chr_update_read_handler = v4v_chr_update_read_handler;
 +    chr->chr_close = v4v_chr_close;
++    chr->chr_add_watch = v4v_chr_add_watch;
++    /* be isn't opened until we get a connection */
++    chr->explicit_be_open = true;
 +
-+    /* V4Vs are always open on creation */
++    s->ioc = QIO_CHANNEL(qio_channel_file_new_fd(fd));
++
++    /* TODO currently starting up open */
 +    qemu_chr_be_generic_open(chr);
-+
 +    s->connected = 1;
 +
++    fprintf(stderr, "Opened V4V chardev\n");
++
 +    return chr;
-+
-+return_err:
-+
-+    if (fd >= 0) {
-+        v4v_close(fd);
-+    }
-+
-+    g_free(chr);
-+    g_free(s);
-+    object_unref(OBJECT(s->ioc));
-+    return NULL;
 +}
 +
 +/***********************************************************/
  /* UDP Net console */
  
  typedef struct {
-@@ -3430,6 +3640,7 @@ QemuOpts *qemu_chr_parse_compat(const ch
+@@ -3430,6 +3648,7 @@ QemuOpts *qemu_chr_parse_compat(const ch
          strcmp(filename, "pty")     == 0 ||
          strcmp(filename, "msmouse") == 0 ||
          strcmp(filename, "braille") == 0 ||
@@ -234,7 +242,7 @@ Index: qemu-2.6.2/qemu-char.c
          strcmp(filename, "testdev") == 0 ||
          strcmp(filename, "stdio")   == 0) {
          qemu_opt_set(opts, "backend", filename, &error_abort);
-@@ -4605,6 +4816,8 @@ static void register_types(void)
+@@ -4605,6 +4824,8 @@ static void register_types(void)
      /* Bug-compatibility: */
      register_char_driver("memory", CHARDEV_BACKEND_KIND_MEMORY,
                           qemu_chr_parse_ringbuf, qemu_chr_open_ringbuf);
