@@ -188,6 +188,45 @@ Index: xen-4.6.1/tools/libxl/libxl_dm.c
              strcat(dmargs, " ");
              strcat(dmargs, args[i]);
          }
+@@ -1531,9 +1531,26 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+                              &stubdom_state->config);
+     if (ret)
+         goto out;
++
+     uint32_t dm_domid = sdss->pvqemu.guest_domid;
+-    pid_t pid;
+ 
++    libxl__xs_write(gc, XBT_NULL,
++                   libxl__sprintf(gc, "%s/image/device-model-domid",
++                                  libxl__xs_get_dompath(gc, guest_domid)),
++                   "%d", dm_domid);
++
++	int32_t timeout = 0;
++	char * ready = NULL;
++    /* Block and wait for v4v firewall rules */
++    while (timeout < 30) {
++        ready = libxl__xs_read(gc, XBT_NULL, libxl__sprintf(gc, "%s/v4v-firewall-ready", libxl__xs_get_dompath(gc, guest_domid)));
++        if(ready)
++            break;
++        sleep(1);
++  	    timeout++;
++    }
++
++    pid_t pid;
+     /* OpenXT: Start the QMP helper */
+     pid = fork();
+     if (pid == -1)
+@@ -1567,10 +1584,6 @@ void libxl__spawn_stub_dm(libxl__egc *eg
+     libxl__write_stub_dmargs(gc, dm_domid, guest_domid, args,
+         guest_config->b_info.stubdomain_version == LIBXL_STUBDOMAIN_VERSION_LINUX);
+     libxl__xs_write(gc, XBT_NULL,
+-                   libxl__sprintf(gc, "%s/image/device-model-domid",
+-                                  libxl__xs_get_dompath(gc, guest_domid)),
+-                   "%d", dm_domid);
+-    libxl__xs_write(gc, XBT_NULL,
+                    libxl__sprintf(gc, "%s/target",
+                                   libxl__xs_get_dompath(gc, dm_domid)),
+                    "%d", guest_domid);
 Index: xen-4.6.1/tools/libxl/libxl_types.idl
 ===================================================================
 --- xen-4.6.1.orig/tools/libxl/libxl_types.idl
