@@ -89,6 +89,11 @@ post_rootfs_shell_commands() {
 
 	# Create file to identify this as the host installer filesystem
 	touch ${IMAGE_ROOTFS}/etc/xenclient-host-installer;
+
+	# Create XL-related files and directories
+	mkdir -p ${IMAGE_ROOTFS}/var/lib/xen ;
+	mkdir -p ${IMAGE_ROOTFS}/etc/xen ;
+	touch ${IMAGE_ROOTFS}/etc/xen/xl.conf ;
 }
 
 ROOTFS_POSTPROCESS_COMMAND += " post_rootfs_shell_commands; "
