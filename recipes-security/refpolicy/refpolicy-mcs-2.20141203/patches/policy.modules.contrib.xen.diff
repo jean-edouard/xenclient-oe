@@ -42,7 +42,33 @@ Index: refpolicy/policy/modules/contrib/xen.if
 ===================================================================
 --- refpolicy.orig/policy/modules/contrib/xen.if
 +++ refpolicy/policy/modules/contrib/xen.if
-@@ -211,7 +211,7 @@ interface(`xen_dontaudit_rw_unix_stream_
+@@ -40,6 +40,25 @@ interface(`xen_exec',`
+ 
+ ########################################
+ ## <summary>
++##	Execute xl/xm in the caller domain.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`xen_xl_exec',`
++	gen_require(`
++		type xm_exec_t;
++	')
++
++	corecmd_search_bin($1)
++	can_exec($1, xm_exec_t)
++')
++
++########################################
++## <summary>
+ ##	Inherit and use xen file descriptors.
+ ## </summary>
+ ## <param name="domain">
+@@ -211,7 +230,7 @@ interface(`xen_dontaudit_rw_unix_stream_
  		type xend_t;
  	')
  
@@ -51,7 +77,7 @@ Index: refpolicy/policy/modules/contrib/xen.if
  ')
  
  ########################################
-@@ -231,6 +231,7 @@ interface(`xen_stream_connect_xenstore',
+@@ -231,6 +250,7 @@ interface(`xen_stream_connect_xenstore',
  	')
  
  	files_search_pids($1)
@@ -59,7 +85,7 @@ Index: refpolicy/policy/modules/contrib/xen.if
  	stream_connect_pattern($1, xenstored_var_run_t, xenstored_var_run_t, xenstored_t)
  ')
  
-@@ -295,3 +296,136 @@ interface(`xen_stream_connect_xm',`
+@@ -295,3 +315,136 @@ interface(`xen_stream_connect_xm',`
  	files_search_pids($1)
  	stream_connect_pattern($1, xenstored_var_run_t, xenstored_var_run_t, xm_t)
  ')
