@@ -13,23 +13,18 @@ DESCRIPTION = "Xen hypervisor libxl, ocaml and xenstore components"
 # This recipe shares a common xen.inc with other recipes.
 # PN in this recipe is "xen-libxl", rather than "xen" as xen.inc is
 # written to expect, so in order to produce the expected package names
-# with a "xen-" rather than "xen-libxl-" prefix, this python section
-# renames the FILES_... variables defined in xen.inc.
+# with a "xen-" rather than "xen-libxl-" prefix, this section
+# copies the FILES_... variables defined in xen.inc.
 # Most package names are defined explicitly rather than using ${PN}.
 
-python () {
-    for PKG in ['xl',
-                'xl-dev',
-                'libxlutil',
-                'libxlutil-dev',
-                'libxenlight',
-                'libxenlight-dev'
-                ]:
-        d.renameVar("FILES_xen-libxl-" + PKG, "FILES_xen-" + PKG)
+FILES_xen-xl := "${FILES_xen-libxl-xl}"
+FILES_xen-xl-dev := "${FILES_xen-libxl-xl-dev}"
+FILES_xen-libxlutil := "${FILES_xen-libxl-libxlutil}"
+FILES_xen-libxlutil-dev := "${FILES_xen-libxl-libxlutil-dev}"
+FILES_xen-libxenlight := "${FILES_xen-libxl-libxenlight}"
+FILES_xen-libxenlight-dev := "${FILES_xen-libxl-libxenlight-dev}"
 
-    # After renaming a variable, it is simpler to append to it here:
-    d.appendVar("FILES_xen-xl", " /etc/init.d/xen-init-dom0")
-}
+FILES_xen-xl += "/etc/init.d/xen-init-dom0"
 
 # OpenXT packages both the C and OCaml versions of XenStored.
 # This recipe packages the OCaml daemon; xen.bb packages the C one.
