@@ -1,0 +1,16 @@
+Index: Linux-PAM-1.2.1/modules/pam_limits/limits.conf
+===================================================================
+--- Linux-PAM-1.2.1.orig/modules/pam_limits/limits.conf
++++ Linux-PAM-1.2.1/modules/pam_limits/limits.conf
+@@ -47,4 +47,11 @@
+ #ftp             hard    nproc           0
+ #@student        -       maxlogins       4
+ 
++# Enable system-wide 55MB core dumps
++# Call out root, which may or may not be included in *
++*               hard    core            56320
++root            hard    core            56320
++*               soft    core            56320
++root            soft    core            56320
++
+ # End of file
