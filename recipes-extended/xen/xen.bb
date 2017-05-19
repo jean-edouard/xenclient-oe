@@ -123,7 +123,8 @@ do_install() {
                     ${D}${sysconfdir}/init.d/xenstored.${PN}-xenstored-c
 
     # The C xenstored uses one additional command line argument:
-    sed 's/EXECUTABLE --/EXECUTABLE --internal-db --/' \
+    # TODO: God this is ugly... There has to be a better way to do this!
+    sed 's/EXECUTABLE --/EXECUTABLE -- --internal-db/' \
         -i ${D}${sysconfdir}/init.d/xenstored.${PN}-xenstored-c
 }
 

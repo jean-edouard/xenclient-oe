@@ -25,7 +25,8 @@ EXECUTABLE=/usr/sbin/xenstored
 
 start() {
 	echo -n "Starting xenstored: "
-	$EXECUTABLE --pid-file $PIDFILE 2> /dev/null 2>&1
+	# Note: using xenstored to create the pidfile, not start-stop-daemon
+	start-stop-daemon --start --quiet --oknodo --exec $EXECUTABLE -- --pid-file $PIDFILE
 	for i in /usr/share/xenclient/xenstore-init*;
 	do
 		$i > /dev/null 2>&1;
@@ -35,7 +36,7 @@ start() {
 
 stop() {
 	echo -n "Stopping xenstored: "
-	while kill `pidof -o %PPID xenstored` 2>/dev/null ; do sleep 1 ; done
+	start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE
 	echo "OK"
 }
 
