@@ -7,16 +7,10 @@ RDEPENDS_${PN}_xenclient-ndvm += " db-tools"
 
 DEPENDS_append_xenclient-nilfvm += " ${@deb_bootstrap_deps(d)} "
 
-inherit autotools-brokensep findlib xenclient
+inherit autotools-brokensep xenclient
 inherit ${@"xenclient-simple-deb"if(d.getVar("MACHINE",1)=="xenclient-nilfvm")else("null")}
 
-PACKAGES = "${PN}-dbg ${PN}-doc ${PN}-locale ${PN}-dev ${PN}-staticdev ${PN} \
-            ${PN}-libs-dbg ${PN}-libs-staticdev ${PN}-libs-dev ${PN}-libs \
-            "
-FILES_${PN}-libs-dbg = "${ocamllibdir}/*/.debug/*"
-FILES_${PN}-libs-dev = "${ocamllibdir}/*/*.so"
-FILES_${PN}-libs-staticdev = "${ocamllibdir}/*/*.a"
-FILES_${PN}-libs = "${ocamllibdir}/*"
+PACKAGES = "${PN}-dbg ${PN}-doc ${PN}-locale ${PN}-dev ${PN}-staticdev ${PN}"
 
 DEB_SUITE = "wheezy"
 DEB_ARCH = "i386"
@@ -26,11 +20,6 @@ DEB_DESC="The nilfvm XenClient toolstack package"
 DEB_DESC_EXT="This package provides the  nilfvm XenClient toolstack scrips."
 DEB_SECTION="misc"
 DEB_PKG_MAINTAINER = "Citrix Systems <customerservice@citrix.com>"
-
-
-
-# Ocaml stuff is built with the native compiler with "-m32".
-CFLAGS_append = " -I${OCAML_HEADERS}"
 
 PV = "0+git${SRCPV}"
 
@@ -47,16 +36,6 @@ do_compile() {
         make V=1 XEN_DIST_ROOT="${STAGING_DIR}"
 }
 
-OCAML_INSTALL_LIBS = " \
-    libs/uuid \
-    libs/stdext \
-    libs/json \
-    libs/jsonrpc \
-    libs/http \
-    libs/log \
-    libs/common \
-    "
-
 do_configure_xenclient-nilfvm() {
         :
 }
@@ -71,13 +50,6 @@ do_install() {
 
         install -d ${D}/etc/xen/scripts
         install -m 0755 ${WORKDIR}/vif ${D}/etc/xen/scripts/vif
-
-        # install ocaml libraries required by other packages
-        mkdir -p "${D}${ocamllibdir}"
-        for ocaml_lib in ${OCAML_INSTALL_LIBS}
-        do
-                oe_runmake -C $ocaml_lib DESTDIR=${D} V=1 install || exit 1
-        done
 }
 
 do_install_append_xenclient-nilfvm() {
