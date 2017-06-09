@@ -14,13 +14,14 @@ FILES_xen-xenstored-ocaml = " \
     ${sysconfdir}/xen/oxenstored.conf \
     "
 
-PROVIDES =+ "xen-xenstored xen-xenstored-ocaml"
-RPROVIDES_xen-xenstored-ocaml = "xen-xenstored xen-xenstored-ocaml"
+PROVIDES =+ "xen-xenstored-ocaml"
+RPROVIDES_xen-xenstored-ocaml = "xen-xenstored-ocaml"
 
 DEPENDS += " \
     util-linux \
     xen \
     xen-blktap \
+    xen-xenstored \
     libnl \
     ocaml-cross \
     "
