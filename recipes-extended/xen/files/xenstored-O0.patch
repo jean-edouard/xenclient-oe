@@ -1,0 +1,12 @@
+Index: xen-4.6.4/tools/xenstore/Makefile
+===================================================================
+--- xen-4.6.4.orig/tools/xenstore/Makefile
++++ xen-4.6.4/tools/xenstore/Makefile
+@@ -11,6 +11,7 @@ CFLAGS += -include $(XEN_ROOT)/tools/con
+ CFLAGS += -I./include
+ CFLAGS += $(CFLAGS_libxenctrl)
+ CFLAGS += -DXEN_LIB_STORED="\"$(XEN_LIB_STORED)\""
++CFLAGS += -O0 -g3
+ 
+ CFLAGS-$(CONFIG_SYSTEMD)  += $(SYSTEMD_CFLAGS)
+ LDFLAGS-$(CONFIG_SYSTEMD) += $(SYSTEMD_LIBS)

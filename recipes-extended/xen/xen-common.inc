@@ -50,6 +50,7 @@ SRC_URI_append = " \
     file://xenstat-disable-tmem-use.patch;patch=1 \
     file://acpi-slic-support.patch \
     file://xsm-for-vtd.patch \
+    file://xenstored-O0.patch \
     file://libxl-do-not-destroy-in-use-tapdevs.patch \
     file://libxl-syslog.patch \
     file://libxl-RFC-4of7-Add-stubdomain-version-tools-domain-build-info.patch \
