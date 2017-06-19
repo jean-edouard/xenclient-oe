@@ -79,6 +79,7 @@ SRC_URI_append = " \
     file://libxl-vwif-support.patch \
     file://libxl-atapi-pt.patch \
     file://libxl-iso-hotswap.patch \
+    file://tboot-xen-evtlog-support.patch \
     file://xsa-155-xen-0001-xen-Add-RING_COPY_REQUEST.patch \
     file://xsa-155-xen-0002-blktap2-Use-RING_COPY_REQUEST.patch \
     file://xsa-212-x86-broken-check-in-memory_exchange.patch \
