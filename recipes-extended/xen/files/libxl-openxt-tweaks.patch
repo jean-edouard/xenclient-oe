@@ -34,10 +34,10 @@ libxl-RFC-*.patch
 ################################################################################
 PATCHES
 ################################################################################
-Index: xen-4.6.5/tools/libxl/libxl_dm.c
+Index: xen-4.6.4/tools/libxl/libxl_dm.c
 ===================================================================
---- xen-4.6.5.orig/tools/libxl/libxl_dm.c
-+++ xen-4.6.5/tools/libxl/libxl_dm.c
+--- xen-4.6.4.orig/tools/libxl/libxl_dm.c
++++ xen-4.6.4/tools/libxl/libxl_dm.c
 @@ -1576,6 +1576,11 @@ void libxl__spawn_stub_dm(libxl__egc *eg
                                         libxl__xs_get_dompath(gc, guest_domid)),
                          "%s",
@@ -123,10 +123,10 @@ Index: xen-4.6.5/tools/libxl/libxl_dm.c
      }
  
      path = libxl__device_model_xs_path(gc, LIBXL_TOOLSTACK_DOMID, domid, "");
-Index: xen-4.6.5/tools/libxl/libxl.c
+Index: xen-4.6.4/tools/libxl/libxl.c
 ===================================================================
---- xen-4.6.5.orig/tools/libxl/libxl.c
-+++ xen-4.6.5/tools/libxl/libxl.c
+--- xen-4.6.4.orig/tools/libxl/libxl.c
++++ xen-4.6.4/tools/libxl/libxl.c
 @@ -1048,7 +1048,8 @@ int libxl_domain_unpause(libxl_ctx *ctx,
          if (rc < 0) {
              LOG(ERROR, "failed to unpause device model for domain %u:%d",
@@ -137,3 +137,18 @@ Index: xen-4.6.5/tools/libxl/libxl.c
          }
      }
      ret = xc_domain_unpause(ctx->xch, domid);
+Index: xen-4.6.4/tools/libxl/libxl_internal.h
+===================================================================
+--- xen-4.6.4.orig/tools/libxl/libxl_internal.h
++++ xen-4.6.4/tools/libxl/libxl_internal.h
+@@ -94,7 +94,9 @@
+  * subsystem sometime produce high latency under load. */
+ #define LIBXL_DEVICE_MODEL_START_TIMEOUT 60
+ #define LIBXL_DEVICE_MODEL_RESTORE_FILE "/var/lib/xen/qemu-resume" /* .$domid */
+-#define LIBXL_STUBDOM_START_TIMEOUT 30
++/* OpenXT: stubdoms can be slow to start,
++ * especially when starting multiple guests at once. */
++#define LIBXL_STUBDOM_START_TIMEOUT 120
+ #define LIBXL_QEMU_BODGE_TIMEOUT 2
+ #define LIBXL_XENCONSOLE_LIMIT 1048576
+ #define LIBXL_XENCONSOLE_PROTOCOL "vt100"
