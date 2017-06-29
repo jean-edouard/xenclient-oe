@@ -10,7 +10,7 @@ Index: qemu-2.6.2/qemu-char.c
  
  #ifndef _WIN32
  #include <sys/times.h>
-@@ -2488,6 +2489,223 @@ err1:
+@@ -2488,6 +2489,243 @@ err1:
  
  
  /***********************************************************/
@@ -26,11 +26,9 @@ Index: qemu-2.6.2/qemu-char.c
 +
 +#define V4V_CHARDRV_NAME  "[v4v-chardrv]"
 +
-+#define V4V_MAGIC_CONNECT    "live"
-+#define V4V_MAGIC_DISCONNECT "dead"
-+
 +typedef struct {
 +    int fd;
++    int connection;
 +    QIOChannel *ioc;
 +    v4v_addr_t remote_addr;
 +    v4v_addr_t local_addr;
@@ -38,7 +36,6 @@ Index: qemu-2.6.2/qemu-char.c
 +    int bufcnt;
 +    int bufptr;
 +    int max_size;
-+    int connected;
 +} V4vCharDriver;
 +
 +static int v4v_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
@@ -46,9 +43,9 @@ Index: qemu-2.6.2/qemu-char.c
 +    V4vCharDriver *s = chr->opaque;
 +    int ret;
 +
-+    ret = v4v_sendto(s->fd, buf, len, 0, &s->remote_addr);
++    ret = v4v_send(s->connection, buf, len, 0);
 +    if (ret != len) {
-+        fprintf(stderr, "%s error: v4v_sendto() failed (%s) - %d %d.\n",
++        fprintf(stderr, "%s error: v4v_send() failed (%s) - %d %d.\n",
 +                V4V_CHARDRV_NAME, strerror(errno), ret, len);
 +        return 0;
 +    }
@@ -93,18 +90,27 @@ Index: qemu-2.6.2/qemu-char.c
 +    CharDriverState *chr = opaque;
 +    V4vCharDriver *s = chr->opaque;
 +    int ret;
++    v4v_addr_t peer;
 +
++    fprintf(stderr, "JED READ\n");
 +    if (s->max_size == 0)
 +        return FALSE;
 +
-+    ret = v4v_recvfrom(s->fd, s->buf, sizeof(s->buf), 0, &s->remote_addr);
-+    if (ret < 0) {
-+        fprintf(stderr, "%s error: v4v_recvfrom() failed (%s) - %d.\n",
-+                V4V_CHARDRV_NAME, strerror(errno), ret);
-+        return FALSE;
-+    }
-+    if (s->connected == 0 && !strncmp((char*)(s->buf), V4V_MAGIC_CONNECT, 4)) {
-+        fprintf(stderr, "v4v_recvfrom() returned V4V_MAGIC_CONNECT, connecting.\n");
++    if (s->connection < 0) {
++        s->connection = v4v_accept(s->fd, &peer);
++        if (s->connection < 0) {
++            fprintf(stderr, "%s error: v4v_accept() failed (%s) - %d.\n",
++                    V4V_CHARDRV_NAME, strerror(errno), s->connection);
++            v4v_close(s->connection);
++            s->connection = -1;
++            return FALSE;
++        }
++        if (peer.port != s->remote_addr.port || peer.domain != s->remote_addr.domain) {
++            fprintf(stderr, "JED FAILED\n");
++            v4v_close(s->connection);
++            s->connection = -1;
++            return FALSE;
++        }
 +        v4v_chr_update_read_handler(chr);
 +        qemu_chr_be_event(chr, CHR_EVENT_OPENED);
 +        if (!chr->fd_in_tag) {
@@ -112,10 +118,18 @@ Index: qemu-2.6.2/qemu-char.c
 +                                               v4v_chr_read_poll,
 +                                               v4v_chr_read, chr);
 +        }
-+        s->connected = 1;
++        fprintf(stderr, "JED CONNECTED\n");
 +        return FALSE;
 +    }
-+    if (s->connected == 1 && !strncmp((char*)(s->buf), V4V_MAGIC_DISCONNECT, 4)) {
++
++    fprintf(stderr, "JED RECV\n");
++    ret = v4v_recv(s->connection, s->buf, sizeof(s->buf), 0);
++    if (ret < 0) {
++        fprintf(stderr, "%s error: v4v_recv() failed (%s) - %d.\n",
++                V4V_CHARDRV_NAME, strerror(errno), ret);
++        return FALSE;
++    }
++    if (ret == 0) {
 +        v4v_chr_update_read_handler(chr);
 +        qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
 +        if (!chr->fd_in_tag) {
@@ -123,8 +137,9 @@ Index: qemu-2.6.2/qemu-char.c
 +                                               v4v_chr_read_poll,
 +                                               v4v_chr_read, chr);
 +        }
-+        fprintf(stderr, "v4v_recvfrom() returned V4V_MAGIC_DISCONNECT, closing.\n");
-+        s->connected = 0;
++        fprintf(stderr, "v4v_recv() returned 0, closing.\n");
++        v4v_close(s->connection);
++        s->connection = -1;
 +        return FALSE;
 +    }
 +
@@ -179,7 +194,7 @@ Index: qemu-2.6.2/qemu-char.c
 +    s->remote_addr.port = V4V_QH_PORT;
 +    s->remote_addr.domain = 0;
 +
-+    fd = v4v_socket(SOCK_DGRAM);
++    fd = v4v_socket(SOCK_STREAM);
 +    if (fd < 0) {
 +        error_setg(errp, "%s cannot create v4v socket - err: %d",
 +                   V4V_CHARDRV_NAME, fd);
@@ -202,6 +217,14 @@ Index: qemu-2.6.2/qemu-char.c
 +        return NULL;
 +    }
 +
++    if (v4v_listen(fd, 1)) {
++        error_setg(errp,
++                   "%s failed to listen on v4v socket - err: %d",
++                   V4V_CHARDRV_NAME, errno);
++        close(fd);
++        return NULL;
++    }
++
 +    chr = qemu_chr_alloc(common, errp);
 +    if (!chr) {
 +        close(fd);
@@ -209,6 +232,7 @@ Index: qemu-2.6.2/qemu-char.c
 +    }
 +
 +    s->fd = fd;
++    s->connection = -1;
 +    s->bufcnt = 0;
 +    s->bufptr = 0;
 +    chr->opaque = s;
@@ -221,10 +245,6 @@ Index: qemu-2.6.2/qemu-char.c
 +
 +    s->ioc = QIO_CHANNEL(qio_channel_file_new_fd(fd));
 +
-+    /* TODO currently starting up open */
-+    qemu_chr_be_generic_open(chr);
-+    s->connected = 1;
-+
 +    fprintf(stderr, "Opened V4V chardev\n");
 +
 +    return chr;
@@ -234,7 +254,7 @@ Index: qemu-2.6.2/qemu-char.c
  /* UDP Net console */
  
  typedef struct {
-@@ -3430,6 +3648,7 @@ QemuOpts *qemu_chr_parse_compat(const ch
+@@ -3430,6 +3668,7 @@ QemuOpts *qemu_chr_parse_compat(const ch
          strcmp(filename, "pty")     == 0 ||
          strcmp(filename, "msmouse") == 0 ||
          strcmp(filename, "braille") == 0 ||
@@ -242,7 +262,7 @@ Index: qemu-2.6.2/qemu-char.c
          strcmp(filename, "testdev") == 0 ||
          strcmp(filename, "stdio")   == 0) {
          qemu_opt_set(opts, "backend", filename, &error_abort);
-@@ -4605,6 +4824,8 @@ static void register_types(void)
+@@ -4605,6 +4844,8 @@ static void register_types(void)
      /* Bug-compatibility: */
      register_char_driver("memory", CHARDEV_BACKEND_KIND_MEMORY,
                           qemu_chr_parse_ringbuf, qemu_chr_open_ringbuf);
