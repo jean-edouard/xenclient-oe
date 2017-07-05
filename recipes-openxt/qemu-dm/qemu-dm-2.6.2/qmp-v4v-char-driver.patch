@@ -10,7 +10,7 @@ Index: qemu-2.6.2/qemu-char.c
  
  #ifndef _WIN32
  #include <sys/times.h>
-@@ -2488,6 +2489,243 @@ err1:
+@@ -2488,6 +2489,286 @@ err1:
  
  
  /***********************************************************/
@@ -30,6 +30,7 @@ Index: qemu-2.6.2/qemu-char.c
 +    int fd;
 +    int connection;
 +    QIOChannel *ioc;
++    QIOChannel *iocmaster;
 +    v4v_addr_t remote_addr;
 +    v4v_addr_t local_addr;
 +    uint8_t buf[READ_BUF_LEN];
@@ -58,6 +59,9 @@ Index: qemu-2.6.2/qemu-char.c
 +    CharDriverState *chr = opaque;
 +    V4vCharDriver *s = chr->opaque;
 +
++    if (s->connection < 0)
++        return 0;
++
 +    s->max_size = qemu_chr_be_can_write(chr);
 +
 +    /* If there were any stray characters in the queue process them
@@ -73,11 +77,39 @@ Index: qemu-2.6.2/qemu-char.c
 +
 +static gboolean v4v_chr_read(QIOChannel *chan, GIOCondition cond, void *opaque);
 +
++static int v4v_chr_accept_poll(void *opaque)
++{
++    CharDriverState *chr = opaque;
++    V4vCharDriver *s = chr->opaque;
++    fd_set set;
++    struct timeval timeout;
++    int rv;
++
++    /* If a connection is open, no need to poll the master fd */
++    if (s->connection > 0)
++        return 0;
++
++    FD_ZERO(&set);
++    FD_SET(s->fd, &set);
++    timeout.tv_sec = 0;
++    timeout.tv_usec = 0;
++    rv = select(s->fd + 1, &set, NULL, NULL, &timeout);
++
++    return rv;
++}
++
++static gboolean v4v_chr_accept(QIOChannel *chan, GIOCondition cond, void *opaque);
++
 +static void v4v_chr_update_read_handler(CharDriverState *chr)
 +{
 +    V4vCharDriver *s = chr->opaque;
 +
 +    remove_fd_in_watch(chr);
++    if (s->iocmaster) {
++        chr->fd_in_tag = io_add_watch_poll(s->iocmaster,
++                                           v4v_chr_accept_poll,
++                                           v4v_chr_accept, chr);
++    }
 +    if (s->ioc) {
 +        chr->fd_in_tag = io_add_watch_poll(s->ioc,
 +                                           v4v_chr_read_poll,
@@ -85,17 +117,13 @@ Index: qemu-2.6.2/qemu-char.c
 +    }
 +}
 +
-+static gboolean v4v_chr_read(QIOChannel *chan, GIOCondition cond, void *opaque)
++static gboolean v4v_chr_accept(QIOChannel *chan, GIOCondition cond, void *opaque)
 +{
 +    CharDriverState *chr = opaque;
 +    V4vCharDriver *s = chr->opaque;
-+    int ret;
 +    v4v_addr_t peer;
 +
-+    fprintf(stderr, "JED READ\n");
-+    if (s->max_size == 0)
-+        return FALSE;
-+
++    /* If we don't have an active connection, it means listen() triggered on s->fd */
 +    if (s->connection < 0) {
 +        s->connection = v4v_accept(s->fd, &peer);
 +        if (s->connection < 0) {
@@ -111,35 +139,44 @@ Index: qemu-2.6.2/qemu-char.c
 +            s->connection = -1;
 +            return FALSE;
 +        }
-+        v4v_chr_update_read_handler(chr);
-+        qemu_chr_be_event(chr, CHR_EVENT_OPENED);
-+        if (!chr->fd_in_tag) {
-+            chr->fd_in_tag = io_add_watch_poll(s->ioc,
-+                                               v4v_chr_read_poll,
-+                                               v4v_chr_read, chr);
-+        }
 +        fprintf(stderr, "JED CONNECTED\n");
++        s->ioc = QIO_CHANNEL(qio_channel_file_new_fd(s->connection));
++        v4v_chr_update_read_handler(chr);
++        qemu_chr_be_generic_open(chr);
++
 +        return FALSE;
 +    }
 +
-+    fprintf(stderr, "JED RECV\n");
++    return TRUE;
++}
++
++static gboolean v4v_chr_read(QIOChannel *chan, GIOCondition cond, void *opaque)
++{
++    CharDriverState *chr = opaque;
++    V4vCharDriver *s = chr->opaque;
++    int ret;
++
++    if (s->connection < 0)
++        return 0;
++
++    /* If we are here, s->connection triggered the watch */
++    if (s->max_size == 0)
++        return FALSE;
 +    ret = v4v_recv(s->connection, s->buf, sizeof(s->buf), 0);
 +    if (ret < 0) {
 +        fprintf(stderr, "%s error: v4v_recv() failed (%s) - %d.\n",
 +                V4V_CHARDRV_NAME, strerror(errno), ret);
++        s->connection = -1;
++        v4v_chr_update_read_handler(chr);
++        qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
 +        return FALSE;
 +    }
 +    if (ret == 0) {
-+        v4v_chr_update_read_handler(chr);
-+        qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
-+        if (!chr->fd_in_tag) {
-+            chr->fd_in_tag = io_add_watch_poll(s->ioc,
-+                                               v4v_chr_read_poll,
-+                                               v4v_chr_read, chr);
-+        }
 +        fprintf(stderr, "v4v_recv() returned 0, closing.\n");
 +        v4v_close(s->connection);
 +        s->connection = -1;
++        v4v_chr_update_read_handler(chr);
++        qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
 +        return FALSE;
 +    }
 +
@@ -170,6 +207,11 @@ Index: qemu-2.6.2/qemu-char.c
 +    if (s->ioc) {
 +        object_unref(OBJECT(s->ioc));
 +    }
++
++    v4v_close(s->connection);
++    v4v_close(s->fd);
++    s->connection = -1;
++    s->fd = -1;
 +
 +    g_free(s);
 +
@@ -243,7 +285,8 @@ Index: qemu-2.6.2/qemu-char.c
 +    /* be isn't opened until we get a connection */
 +    chr->explicit_be_open = true;
 +
-+    s->ioc = QIO_CHANNEL(qio_channel_file_new_fd(fd));
++    s->iocmaster = QIO_CHANNEL(qio_channel_file_new_fd(fd));
++    s->ioc = NULL;
 +
 +    fprintf(stderr, "Opened V4V chardev\n");
 +
@@ -254,7 +297,7 @@ Index: qemu-2.6.2/qemu-char.c
  /* UDP Net console */
  
  typedef struct {
-@@ -3430,6 +3668,7 @@ QemuOpts *qemu_chr_parse_compat(const ch
+@@ -3430,6 +3711,7 @@ QemuOpts *qemu_chr_parse_compat(const ch
          strcmp(filename, "pty")     == 0 ||
          strcmp(filename, "msmouse") == 0 ||
          strcmp(filename, "braille") == 0 ||
@@ -262,7 +305,7 @@ Index: qemu-2.6.2/qemu-char.c
          strcmp(filename, "testdev") == 0 ||
          strcmp(filename, "stdio")   == 0) {
          qemu_opt_set(opts, "backend", filename, &error_abort);
-@@ -4605,6 +4844,8 @@ static void register_types(void)
+@@ -4605,6 +4887,8 @@ static void register_types(void)
      /* Bug-compatibility: */
      register_char_driver("memory", CHARDEV_BACKEND_KIND_MEMORY,
                           qemu_chr_parse_ringbuf, qemu_chr_open_ringbuf);
