@@ -10,7 +10,7 @@ Index: qemu-2.6.2/qemu-char.c
  
  #ifndef _WIN32
  #include <sys/times.h>
-@@ -2488,6 +2489,286 @@ err1:
+@@ -2488,6 +2489,299 @@ err1:
  
  
  /***********************************************************/
@@ -23,6 +23,9 @@ Index: qemu-2.6.2/qemu-char.c
 +#define V4V_CHARDRV_PORT 15100
 +#define V4V_CHARDRV_RING_SIZE \
 +  (V4V_ROUNDUP((((4096)*4) - sizeof(v4v_ring_t)-V4V_ROUNDUP(1))))
++
++#define V4V_MAGIC_CONNECT    "live"
++#define V4V_MAGIC_DISCONNECT "dead"
 +
 +#define V4V_CHARDRV_NAME  "[v4v-chardrv]"
 +
@@ -179,6 +182,16 @@ Index: qemu-2.6.2/qemu-char.c
 +        qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
 +        return FALSE;
 +    }
++    if (!strncmp((char*)(s->buf), V4V_MAGIC_CONNECT, 4)) {
++        v4v_chr_update_read_handler(chr);
++        qemu_chr_be_event(chr, CHR_EVENT_OPENED);
++        return FALSE;
++    }
++    if (!strncmp((char*)(s->buf), V4V_MAGIC_DISCONNECT, 4)) {
++        v4v_chr_update_read_handler(chr);
++        qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
++        return FALSE;
++    }
 +
 +    s->bufcnt = ret;
 +    s->bufptr = 0;
@@ -297,7 +310,7 @@ Index: qemu-2.6.2/qemu-char.c
  /* UDP Net console */
  
  typedef struct {
-@@ -3430,6 +3711,7 @@ QemuOpts *qemu_chr_parse_compat(const ch
+@@ -3430,6 +3724,7 @@ QemuOpts *qemu_chr_parse_compat(const ch
          strcmp(filename, "pty")     == 0 ||
          strcmp(filename, "msmouse") == 0 ||
          strcmp(filename, "braille") == 0 ||
@@ -305,7 +318,35 @@ Index: qemu-2.6.2/qemu-char.c
          strcmp(filename, "testdev") == 0 ||
          strcmp(filename, "stdio")   == 0) {
          qemu_opt_set(opts, "backend", filename, &error_abort);
-@@ -4605,6 +4887,8 @@ static void register_types(void)
+@@ -4542,6 +4837,17 @@ out_error:
+     return NULL;
+ }
+ 
++static bool qemu_chr_is_busy(CharDriverState *chr)
++{
++    if (chr->is_mux) {
++        MuxDriver *d = chr->opaque;
++        return d->mux_cnt >= 0;
++    } else {
++        return (chr->chr_can_read || chr->chr_read ||
++                chr->chr_event || chr->handler_opaque);
++    }
++}
++
+ void qmp_chardev_remove(const char *id, Error **errp)
+ {
+     CharDriverState *chr;
+@@ -4551,8 +4857,7 @@ void qmp_chardev_remove(const char *id,
+         error_setg(errp, "Chardev '%s' not found", id);
+         return;
+     }
+-    if (chr->chr_can_read || chr->chr_read ||
+-        chr->chr_event || chr->handler_opaque) {
++    if (qemu_chr_is_busy(chr)) {
+         error_setg(errp, "Chardev '%s' is busy", id);
+         return;
+     }
+@@ -4605,6 +4910,8 @@ static void register_types(void)
      /* Bug-compatibility: */
      register_char_driver("memory", CHARDEV_BACKEND_KIND_MEMORY,
                           qemu_chr_parse_ringbuf, qemu_chr_open_ringbuf);

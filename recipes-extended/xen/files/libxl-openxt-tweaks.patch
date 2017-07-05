@@ -34,10 +34,10 @@ libxl-RFC-*.patch
 ################################################################################
 PATCHES
 ################################################################################
-Index: xen-4.6.5/tools/libxl/libxl_dm.c
+Index: xen-4.6.4/tools/libxl/libxl_dm.c
 ===================================================================
---- xen-4.6.5.orig/tools/libxl/libxl_dm.c
-+++ xen-4.6.5/tools/libxl/libxl_dm.c
+--- xen-4.6.4.orig/tools/libxl/libxl_dm.c
++++ xen-4.6.4/tools/libxl/libxl_dm.c
 @@ -1576,6 +1576,11 @@ void libxl__spawn_stub_dm(libxl__egc *eg
                                         libxl__xs_get_dompath(gc, guest_domid)),
                          "%s",
@@ -123,10 +123,10 @@ Index: xen-4.6.5/tools/libxl/libxl_dm.c
      }
  
      path = libxl__device_model_xs_path(gc, LIBXL_TOOLSTACK_DOMID, domid, "");
-Index: xen-4.6.5/tools/libxl/libxl.c
+Index: xen-4.6.4/tools/libxl/libxl.c
 ===================================================================
---- xen-4.6.5.orig/tools/libxl/libxl.c
-+++ xen-4.6.5/tools/libxl/libxl.c
+--- xen-4.6.4.orig/tools/libxl/libxl.c
++++ xen-4.6.4/tools/libxl/libxl.c
 @@ -1048,7 +1048,8 @@ int libxl_domain_unpause(libxl_ctx *ctx,
          if (rc < 0) {
              LOG(ERROR, "failed to unpause device model for domain %u:%d",
@@ -137,3 +137,16 @@ Index: xen-4.6.5/tools/libxl/libxl.c
          }
      }
      ret = xc_domain_unpause(ctx->xch, domid);
+Index: xen-4.6.4/tools/libxl/libxl_qmp.c
+===================================================================
+--- xen-4.6.4.orig/tools/libxl/libxl_qmp.c
++++ xen-4.6.4/tools/libxl/libxl_qmp.c
+@@ -82,7 +82,7 @@ static int qmp_send(libxl__qmp_handler *
+                     qmp_callback_t callback, void *opaque,
+                     qmp_request_context *context);
+ 
+-static const int QMP_SOCKET_CONNECT_TIMEOUT = 5;
++static const int QMP_SOCKET_CONNECT_TIMEOUT = 1;
+ 
+ /*
+  * QMP callbacks functions

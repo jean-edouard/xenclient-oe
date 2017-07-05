@@ -6,7 +6,7 @@ DEPENDS = "libv4v"
 PV = "0+git${SRCPV}"
 
 SRCREV = "${AUTOREV}"
-SRC_URI = "git://github.com/jean-edouard/xctools.git;protocol=git;branch=qmpstream"
+SRC_URI = "git://github.com/jean-edouard/xctools.git;protocol=git;branch=qmpstream2"
 
 FILES_${PN} += "/usr/lib/xen/bin/qmp_helper"
 FILES_${PN}-dbg += " /usr/lib/xen/bin/.debug "
