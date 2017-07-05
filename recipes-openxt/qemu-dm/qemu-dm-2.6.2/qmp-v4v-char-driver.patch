@@ -318,34 +318,6 @@ Index: qemu-2.6.2/qemu-char.c
          strcmp(filename, "testdev") == 0 ||
          strcmp(filename, "stdio")   == 0) {
          qemu_opt_set(opts, "backend", filename, &error_abort);
-@@ -4542,6 +4837,17 @@ out_error:
-     return NULL;
- }
- 
-+static bool qemu_chr_is_busy(CharDriverState *chr)
-+{
-+    if (chr->is_mux) {
-+        MuxDriver *d = chr->opaque;
-+        return d->mux_cnt >= 0;
-+    } else {
-+        return (chr->chr_can_read || chr->chr_read ||
-+                chr->chr_event || chr->handler_opaque);
-+    }
-+}
-+
- void qmp_chardev_remove(const char *id, Error **errp)
- {
-     CharDriverState *chr;
-@@ -4551,8 +4857,7 @@ void qmp_chardev_remove(const char *id,
-         error_setg(errp, "Chardev '%s' not found", id);
-         return;
-     }
--    if (chr->chr_can_read || chr->chr_read ||
--        chr->chr_event || chr->handler_opaque) {
-+    if (qemu_chr_is_busy(chr)) {
-         error_setg(errp, "Chardev '%s' is busy", id);
-         return;
-     }
 @@ -4605,6 +4910,8 @@ static void register_types(void)
      /* Bug-compatibility: */
      register_char_driver("memory", CHARDEV_BACKEND_KIND_MEMORY,
