@@ -137,3 +137,16 @@ Index: xen-4.6.5/tools/libxl/libxl.c
          }
      }
      ret = xc_domain_unpause(ctx->xch, domid);
+Index: xen-4.6.5/tools/libxl/libxl_qmp.c
+===================================================================
+--- xen-4.6.5.orig/tools/libxl/libxl_qmp.c
++++ xen-4.6.5/tools/libxl/libxl_qmp.c
+@@ -82,7 +82,7 @@ static int qmp_send(libxl__qmp_handler *
+                     qmp_callback_t callback, void *opaque,
+                     qmp_request_context *context);
+ 
+-static const int QMP_SOCKET_CONNECT_TIMEOUT = 5;
++static const int QMP_SOCKET_CONNECT_TIMEOUT = 1;
+ 
+ /*
+  * QMP callbacks functions
