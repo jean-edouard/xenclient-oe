@@ -33,10 +33,10 @@ INTERNAL DEPENDENCIES
 ################################################################################
 PATCHES
 ################################################################################
-Index: xen-4.6.4/tools/libxl/libxl_device.c
+Index: xen-4.6.5/tools/libxl/libxl_device.c
 ===================================================================
---- xen-4.6.4.orig/tools/libxl/libxl_device.c
-+++ xen-4.6.4/tools/libxl/libxl_device.c
+--- xen-4.6.5.orig/tools/libxl/libxl_device.c
++++ xen-4.6.5/tools/libxl/libxl_device.c
 @@ -255,6 +255,11 @@ static int disk_try_backend(disk_try_bac
              return backend;
          }
@@ -72,10 +72,10 @@ Index: xen-4.6.4/tools/libxl/libxl_device.c
  
      chrused = -1;
      if ((sscanf(virtpath, "d%ip%i%n", &disk, &partition, &chrused)  >= 2
-Index: xen-4.6.4/tools/libxl/libxl_dm.c
+Index: xen-4.6.5/tools/libxl/libxl_dm.c
 ===================================================================
---- xen-4.6.4.orig/tools/libxl/libxl_dm.c
-+++ xen-4.6.4/tools/libxl/libxl_dm.c
+--- xen-4.6.5.orig/tools/libxl/libxl_dm.c
++++ xen-4.6.5/tools/libxl/libxl_dm.c
 @@ -1120,6 +1120,10 @@ static int libxl__build_device_model_arg
                      drive = libxl__sprintf
                          (gc, "if=ide,index=%d,readonly=%s,media=cdrom,cache=writeback,id=ide-%i",
@@ -133,10 +133,10 @@ Index: xen-4.6.4/tools/libxl/libxl_dm.c
      libxl__dm_vifs_from_hvm_guest_config(gc, guest_config, dm_config);
  
      dm_config->c_info.run_hotplug_scripts =
-Index: xen-4.6.4/tools/libxl/libxlu_disk.c
+Index: xen-4.6.5/tools/libxl/libxlu_disk.c
 ===================================================================
---- xen-4.6.4.orig/tools/libxl/libxlu_disk.c
-+++ xen-4.6.4/tools/libxl/libxlu_disk.c
+--- xen-4.6.5.orig/tools/libxl/libxlu_disk.c
++++ xen-4.6.5/tools/libxl/libxlu_disk.c
 @@ -75,7 +75,9 @@ int xlu_disk_parse(XLU_Config *cfg,
      }
      if (disk->is_cdrom) {
