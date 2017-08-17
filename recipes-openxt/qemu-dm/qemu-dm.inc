@@ -182,7 +182,7 @@ do_compile_prepend() {
 	dev_disable CONFIG_PCNET_PCI
 	dev_disable CONFIG_PCNET_COMMON
 	dev_disable CONFIG_ES1370
-	dev_disable CONFIG_LSI_SCSI_PCI
+	#dev_disable CONFIG_LSI_SCSI_PCI
 	dev_disable CONFIG_VMW_PVSCSI_SCSI_PCI
 	dev_disable CONFIG_MEGASAS_SCSI_PCI
 	dev_disable CONFIG_MPTSAS_SCSI_PCI
