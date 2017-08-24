@@ -3731,7 +3731,7 @@ Index: linux-4.9.40/drivers/usb/xen-usbback/xenbus.c
 +		= container_of(watch, struct backend_info, backend_watch);
 +	struct xenbus_device *dev = be->dev;
 +
-+	err = xenbus_scanf(XBT_NIL, dev->nodename, "physical-device", "%d.%d",
++	err = xenbus_scanf(XBT_NIL, dev->nodename, "physical-device", "%x.%x",
 +			   &bus, &device);
 +	if (XENBUS_EXIST_ERR(err)) {
 +		/* Since this watch will fire once immediately after it is
