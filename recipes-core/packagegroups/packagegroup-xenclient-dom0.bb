@@ -76,7 +76,6 @@ RDEPENDS_${PN} = " \
     pmtools \
     svirt-interpose \
     selinux-load \
-    ustr \
     ethtool \
     intel-microcode \
     rsyslog \
