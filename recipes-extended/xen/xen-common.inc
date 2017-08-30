@@ -13,7 +13,6 @@ SRC_URI[sha256sum] := "${XEN_SRC_SHA256SUM}"
 SRC_URI_append = " \
     file://defconfig \
     file://config.patch \
-    file://do-not-overwrite-cc-and-ld.patch \
     file://disable-xen-root-check.patch \
     file://blktap-resume-fix.patch;patch=1 \
     file://hvm-pm-hibernate-s-state.patch;patch=1 \
