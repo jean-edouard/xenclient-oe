@@ -15,6 +15,7 @@ RDEPENDS_${PN} = " \
     xen-console \
     xen-hvmloader \
     xen-hypervisor \
+    xen-efi \
     xen-flask-tools \
     xen-libblktapctl \
     xen-libvhd \
@@ -29,6 +30,7 @@ RDEPENDS_${PN} = " \
     xen-xl \
     xen-xsm-policy \
     grub \
+    shim \
     tboot \
     tboot-utils \
     e2fsprogs-tune2fs \
