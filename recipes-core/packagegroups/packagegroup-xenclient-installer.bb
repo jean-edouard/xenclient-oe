@@ -15,6 +15,7 @@ RDEPENDS_${PN} = " \
     xen-blktap \
     xen-console \
     xen-hypervisor \
+    xen-efi \
     xen-flask-tools \
     xen-libblktapctl \
     xen-libvhd \
@@ -25,6 +26,7 @@ RDEPENDS_${PN} = " \
     xen-libxlutil \
     xen-xenstat \
     xen-xl \
+    xen-xenstored-ocaml \
     dialog \
     e2fsprogs \
     e2fsprogs-e2fsck \
@@ -44,7 +46,6 @@ RDEPENDS_${PN} = " \
     pciutils-ids \
     dosfstools \
     syslinux \
-    syslinux-isohybrid \
     syslinux-isolinux \
     syslinux-mboot \
     syslinux-pxelinux \
@@ -72,6 +73,10 @@ RDEPENDS_${PN} = " \
     libtctidevice \
     libtctisocket \
     tpm2-tools \
+    efibootmgr \
+    shim \
+    gptfdisk \
+    parted \
 "
 
 # open-iscsi-user \
