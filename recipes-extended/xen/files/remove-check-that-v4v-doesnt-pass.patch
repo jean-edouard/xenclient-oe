@@ -1,0 +1,13 @@
+Index: xen-4.9.1/xen/include/Makefile
+===================================================================
+--- xen-4.9.1.orig/xen/include/Makefile
++++ xen-4.9.1/xen/include/Makefile
+@@ -90,7 +90,7 @@ compat/xlat.h: $(addprefix compat/.xlat/
+ 
+ ifeq ($(XEN_TARGET_ARCH),$(XEN_COMPILE_ARCH))
+ 
+-all: headers.chk headers99.chk headers++.chk
++all: headers.chk headers99.chk
+ 
+ PUBLIC_HEADERS := $(filter-out public/arch-% public/dom0_ops.h, $(wildcard public/*.h public/*/*.h) $(public-y))
+ 
