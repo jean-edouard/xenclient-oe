@@ -16,6 +16,8 @@ do_configure() {
 
 EXTRA_OEMAKE = 'BACKEND=x86emu'
 
+CFLAGS += '-fPIC'
+
 do_compile() {
 	oe_runmake BACKEND=x86emu CFLAGS="${CFLAGS} ${LDFLAGS}" shared
 	#${STRIP} libx86.so.1

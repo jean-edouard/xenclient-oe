@@ -1,6 +1,8 @@
 require recipes-extended/xen/xen.inc
 require xen-common.inc
 
+XEN_TARGET_ARCH = "x86_64"
+
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 SRC_URI_append = "\

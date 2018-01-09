@@ -124,7 +124,7 @@ DEPENDS_remove = "iproute2"
 # The stubs and deploy tasks are detected as MACHINE-specific due to the
 # variables that they use. Those tasks are not required here so drop them.
 
-deltask stubs
+#deltask stubs
 deltask deploy
 #--
 

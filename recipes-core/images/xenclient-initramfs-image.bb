@@ -40,7 +40,7 @@ PACKAGE_REMOVE = "kernel-image-* update-modules udev sysvinit opkg* mdev*"
 # Pull in required shared libraries. Having them in a package shared with dom0 causes
 # other packages to depend on it no matter what we put in its recipe...
 EXTRA_INITRAMFS_LIBS = "\
-    lib/ld-linux.so.2 \
+    lib/ld-linux-x86-64.so.2 \
     lib/libc.so.6 \
     lib/libdl.so.2 \
     lib/libnss_files.so.2 \
