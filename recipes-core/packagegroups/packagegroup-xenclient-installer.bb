@@ -66,7 +66,6 @@ RDEPENDS_${PN} = " \
     xenclient-pcrdiff \
     xenclient-tpm-scripts \
     openxt-keymanagement \
-    openxt-measuredlaunch \
     ncurses \
     intel-microcode \
     libtss2 \
