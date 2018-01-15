@@ -73,6 +73,16 @@ do_configure_append() {
     xc-rpcgen --haskell --templates-dir=${rpcgendatadir} -c -o Rpc/Autogen --module-prefix=Rpc.Autogen ${idldatadir}/ctxusb_daemon.xml
 }
 
+do_compile() {
+    ${RUNGHC} Setup.*hs build \
+        --ghc-options='-dynload sysdep
+                       -pgmc ./ghc-cc
+                       -pgml ./ghc-ld
+                       -v3 -dcore-lint' \
+        --with-gcc="./ghc-cc" \
+        --verbose
+}
+
 do_install_append() {
     install -m 0755 ${S}/setup-ica-vm ${D}/usr/bin/setup-ica-vm
     install -m 0755 -d ${D}/etc
