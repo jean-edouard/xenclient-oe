@@ -1,8 +1,8 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${BPN}:"
 # meta-virtualization recipe for seabios will fetch using the http:// source
 # which is 308 to the https://, throwing the fetcher off.
-PREMIRRORS_prepend = " \
-    http://code.coreboot.org/p/seabios/downloads/.* https://code.coreboot.org/p/seabios/downloads/get/${PN}-${PV}.tar.gz\
+PREMIRRORS_prepend += " \
+    http://code.coreboot.org/p/seabios/downloads/get/.* https://code.coreboot.org/p/seabios/downloads/get/${PN}-${PV}.tar.gz \
 "
 SRC_URI += " \
     file://halt-if-no-bootable.patch \
