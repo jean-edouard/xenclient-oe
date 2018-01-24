@@ -139,6 +139,13 @@ ROOTFS_POSTPROCESS_COMMAND += " \
     process_tmp_stubdomain_items; \
 "
 
+activate_verbose_sysvinit() {
+    sed -i -e 's/^VERBOSE=no$/VERBOSE=yes/' ${IMAGE_ROOTFS}${sysconfdir}/default/rcS
+}
+
+# Make sysvinit verbose if debug-tweaks is enabled
+ROOTFS_POSTPROCESS_COMMAND += '${@bb.utils.contains("IMAGE_FEATURES", "debug-tweaks" , "activate_verbose_sysvinit; ", "",d)}'
+
 inherit openxt-selinux-image
 inherit xenclient-licences
 require xenclient-version.inc
