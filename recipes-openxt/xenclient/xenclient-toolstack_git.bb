@@ -60,7 +60,7 @@ PACKAGE_ARCH = "${MACHINE_ARCH}"
 S = "${WORKDIR}/git"
 
 # TODO: ocamlc can figure it out in the build-system.
-CFLAGS_append = " -I${ocamlincdir}"
+CFLAGS_append = " -fPIC -I${ocamlincdir}"
 do_compile() {
         make V=1 XEN_DIST_ROOT="${STAGING_DIR_HOST}"
 }

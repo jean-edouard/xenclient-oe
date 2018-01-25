@@ -213,7 +213,7 @@ Index: qemu-2.6.2/hw/xen/xen_acpi_pm.c
 ===================================================================
 --- /dev/null
 +++ qemu-2.6.2/hw/xen/xen_acpi_pm.c
-@@ -0,0 +1,1127 @@
+@@ -0,0 +1,1128 @@
 +/*
 + * APCI PM feature for battery/AC/lid management for OpenXT guests.
 + *
@@ -241,6 +241,7 @@ Index: qemu-2.6.2/hw/xen/xen_acpi_pm.c
 + */
 +
 +#include <stdint.h>
++#include <inttypes.h>
 +#include "qemu/osdep.h"
 +#include "include/qemu-common.h"
 +#include "hw/sysbus.h"
@@ -747,7 +748,7 @@ Index: qemu-2.6.2/hw/xen/xen_acpi_pm.c
 +        break;
 +    }
 +    default:
-+        XBM_ERROR_MSG("unknown cmd: %llu", val);
++        XBM_ERROR_MSG("unknown cmd: %"PRIu64, val);
 +        break;
 +    }
 +

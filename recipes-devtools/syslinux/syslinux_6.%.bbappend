@@ -19,3 +19,8 @@ FILES_${PN}-mboot = " \
     ${datadir}/${BPN}/mboot.c32 \
     ${datadir}/${BPN}/libcom32.c32 \
 "
+
+# syslinux and syslinux-mboot package 32 bits binaries
+# package QA would trip on them for 64 bits builds without:
+INSANE_SKIP_${PN} = "arch"
+INSANE_SKIP_${PN}-mboot = "arch"
