@@ -28,7 +28,15 @@ DEFINIT=/sbin/init
 FIRSTBOOT_FLAG=/boot/system/firstboot
 
 is_tpm_2_0 () {
-    [ -e /sys/class/tpm/tpm0/device/description ] && cat /sys/class/tpm/tpm0/device/description | grep "2.0" &>/dev/null
+    # Grab the tpm_tis line from dmesg
+    isit1=`dmesg | grep -m 1 tpm_tis`
+    # Remove the timestamp
+    isit2=${isit1#\[*\]}
+    # Remove the module name and version
+    isit3=${isit2#*: }
+    # Keep only the first word (the TPM version)
+    isit4=${isit3%% *}
+    [[ $isit4 = "2.0" ]]
 }
 
 #listpcrs sample output:
@@ -184,7 +192,7 @@ fatal() {
 
 tpm_setup() {
     CMDLINE="ro measured" read_args
-    modprobe tpm_tis
+    modprobe tpm_tis force=1
     is_tpm_2_0
     if [ $? -eq 0 ];
     then
