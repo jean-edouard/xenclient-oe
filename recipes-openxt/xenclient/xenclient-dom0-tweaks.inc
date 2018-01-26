@@ -18,6 +18,7 @@ SRC_URI = "file://enter-s3.sh \
 	   file://dom0_add_vif.sh \
 	   file://blacklist-nvidiafb.conf \
 	   file://r8168.conf \
+	   file://tpm-tis.conf \
 	   file://create-ndvm \
 	   file://status-report \
 	   file://status-tool \
@@ -48,6 +49,8 @@ do_install () {
 		${D}/etc/modprobe.d/blacklist-nvidiafb.conf
 	install -m 0644 ${WORKDIR}/r8168.conf \
 		${D}/etc/modprobe.d/r8168.conf
+	install -m 0644 ${WORKDIR}/tpm-tis.conf \
+		${D}/etc/modprobe.d/tpm-tis.conf
 
 	install -d ${D}/etc/init.d
 	install -m 0755 ${WORKDIR}/firstboot.initscript \

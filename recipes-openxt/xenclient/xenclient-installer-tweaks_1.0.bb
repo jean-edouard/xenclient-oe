@@ -6,6 +6,7 @@ SRC_URI = "file://status-report \
            file://60installer \
            file://prepare-hd-install \
            file://i915.conf \
+           file://tpm-tis.conf \
            file://console-bell.initscript"
 LICENSE = "Proprietary"
 PR = "r6"
@@ -28,6 +29,7 @@ do_install () {
 
     install -d ${D}/etc/modprobe.d
     install -m 0644 ${WORKDIR}/i915.conf ${D}/etc/modprobe.d/i915.conf
+    install -m 0644 ${WORKDIR}/tpm-tis.conf ${D}/etc/modprobe.d/tpm-tis.conf
 
     install -d ${D}/etc/init.d
     install -m 0755 ${WORKDIR}/console-bell.initscript ${D}/etc/init.d/console-bell
