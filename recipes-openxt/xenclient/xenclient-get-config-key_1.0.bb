@@ -9,6 +9,11 @@ SRC_URI = "file://get-config-key.c \
 
 S = "${WORKDIR}"
 
+do_configure() {
+    UUID=$(cat /proc/sys/kernel/random/uuid)
+    sed -i "s/\"0\"/\"${UUID}\"/g" get-config-key.c
+}
+
 do_compile() {
 	oe_runmake get-config-key
 	${STRIP} get-config-key
