@@ -58,15 +58,18 @@ Index: xen-4.10.0/tools/console/daemon/io.c
  	size_t max_capacity;
  };
  
-@@ -142,6 +144,7 @@ static struct console_type console_type[
+@@ -142,8 +144,10 @@ static struct console_type console_type[
  
  struct domain {
  	int domid;
 +	char *name;
  	bool is_dead;
  	unsigned last_seen;
++	struct buffer slbuffer;
  	struct domain *next;
-@@ -156,6 +159,59 @@ typedef void (*VOID_ITER_FUNC_ARG2)(stru
+ 	struct console console[NUM_CONSOLE_TYPE];
+ };
+@@ -156,6 +160,59 @@ typedef void (*VOID_ITER_FUNC_ARG2)(stru
  typedef int (*INT_ITER_FUNC_ARG3)(struct console *,
  				  struct domain *dom, void **);
  
@@ -126,7 +129,7 @@ Index: xen-4.10.0/tools/console/daemon/io.c
  static inline bool console_enabled(struct console *con)
  {
  	return con->local_port != -1;
-@@ -298,7 +354,7 @@ static void buffer_append(struct console
+@@ -298,7 +355,7 @@ static void buffer_append(struct console
  	if ((size == 0) || (size > sizeof(intf->out)))
  		return;
  
@@ -135,7 +138,7 @@ Index: xen-4.10.0/tools/console/daemon/io.c
  		buffer->capacity += (size + 1024);
  		buffer->data = realloc(buffer->data, buffer->capacity);
  		if (buffer->data == NULL) {
-@@ -307,9 +363,11 @@ static void buffer_append(struct console
+@@ -307,9 +364,11 @@ static void buffer_append(struct console
  		}
  	}
  
@@ -150,7 +153,7 @@ Index: xen-4.10.0/tools/console/daemon/io.c
  
  	xen_mb();
  	intf->out_cons = cons;
-@@ -336,6 +394,8 @@ static void buffer_append(struct console
+@@ -336,6 +395,8 @@ static void buffer_append(struct console
  			dolog(LOG_ERR, "Write to log failed "
  			      "on domain %d: %d (%s)\n",
  			      dom->domid, errno, strerror(errno));
@@ -159,7 +162,7 @@ Index: xen-4.10.0/tools/console/daemon/io.c
  	}
  
  	if (discard_overflowed_data && buffer->max_capacity &&
-@@ -395,7 +455,12 @@ static int create_hv_log(void)
+@@ -395,7 +456,12 @@ static int create_hv_log(void)
  {
  	char logfile[PATH_MAX];
  	int fd;
@@ -173,7 +176,54 @@ Index: xen-4.10.0/tools/console/daemon/io.c
  	logfile[PATH_MAX-1] = '\0';
  
  	fd = open(logfile, O_WRONLY|O_CREAT|O_APPEND, 0644);
-@@ -606,6 +671,12 @@ static int console_create_tty(struct con
+@@ -419,35 +485,29 @@ static int create_hv_log(void)
+ static int create_console_log(struct console *con)
+ {
+ 	char logfile[PATH_MAX];
+-	char *namepath, *data, *s;
++	char *dompath;
+ 	int fd;
+-	unsigned int len;
+ 	struct domain *dom = con->d;
+ 
+-	namepath = xs_get_domain_path(xs, dom->domid);
+-	s = realloc(namepath, strlen(namepath) + 6);
+-	if (s == NULL) {
+-		free(namepath);
++	dompath = xs_get_domain_path(xs, dom->domid);
++	if (!dompath) {
+ 		return -1;
+ 	}
+-	namepath = s;
+-	strcat(namepath, "/name");
+-	data = xs_read(xs, XBT_NULL, namepath, &len);
+-	free(namepath);
+-	if (!data)
++	dom->name = name_from_dompath(dompath);
++	free(dompath);
++	if (!dom->name) {
+ 		return -1;
+-	if (!len) {
+-		free(data);
++	}
++	if (!log_dir) {
+ 		return -1;
+ 	}
+ 
+-	snprintf(logfile, PATH_MAX-1, "%s/guest-%s%s.log",
+-		 log_dir, data, con->log_suffix);
++	snprintf(logfile, PATH_MAX - 1, "%s/%s.log",
++		 log_dir, dom->name);
+ 
+-	free(data);
+ 	logfile[PATH_MAX-1] = '\0';
+ 
+-	fd = open(logfile, O_WRONLY|O_CREAT|O_APPEND, 0644);
++	fd = open(logfile, O_WRONLY | O_CREAT | O_APPEND, 0644);
+ 	if (fd == -1)
+ 		dolog(LOG_ERR, "Failed to open log %s: %d (%s)",
+ 		      logfile, errno, strerror(errno));
+@@ -606,6 +666,12 @@ static int console_create_tty(struct con
  	if (fcntl(con->master_fd, F_SETFL, O_NONBLOCK) == -1)
  		goto out;
  
@@ -186,7 +236,30 @@ Index: xen-4.10.0/tools/console/daemon/io.c
  	return 1;
  out:
  	console_close_tty(con);
-@@ -1132,7 +1203,10 @@ static void handle_xs(void)
+@@ -808,6 +874,7 @@ static int console_init(struct console *
+ 	con->local_port = -1;
+ 	con->remote_port = -1;
+ 	con->xce_pollfd_idx = -1;
++	dom->name = NULL;
+ 	con->next_period = ((long long)ts.tv_sec * 1000) + (ts.tv_nsec / 1000000) + RATE_LIMIT_PERIOD;
+ 	con->d = dom;
+ 	con->ttyname = (*con_type)->ttyname;
+@@ -905,6 +972,14 @@ static void console_cleanup(struct conso
+ 
+ 	free(con->xspath);
+ 	con->xspath = NULL;
++
++	free(con->d->slbuffer.data);
++	con->d->slbuffer.data = NULL;
++
++	if (con->d->name) {
++		free(con->d->name);
++		con->d->name = NULL;
++	}
+ }
+ 
+ static void cleanup_domain(struct domain *d)
+@@ -1132,7 +1207,10 @@ static void handle_xs(void)
  
  static void handle_hv_logs(xenevtchn_handle *xce_handle, bool force)
  {
@@ -198,7 +271,7 @@ Index: xen-4.10.0/tools/console/daemon/io.c
  	char *bufptr = buffer;
  	unsigned int size;
  	static uint32_t index = 0;
-@@ -1141,25 +1215,47 @@ static void handle_hv_logs(xenevtchn_han
+@@ -1141,25 +1219,47 @@ static void handle_hv_logs(xenevtchn_han
  	if (!force && ((port = xenevtchn_pending(xce_handle)) == -1))
  		return;
  
@@ -264,7 +337,7 @@ Index: xen-4.10.0/tools/console/daemon/io.c
  
  	if (port != -1)
  		(void)xenevtchn_unmask(xce_handle, port);
-@@ -1301,8 +1397,6 @@ void handle_io(void)
+@@ -1301,8 +1401,6 @@ void handle_io(void)
  			goto out;
  		}
  		log_hv_fd = create_hv_log();

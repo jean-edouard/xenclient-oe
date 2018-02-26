@@ -120,7 +120,7 @@ Index: xen-4.10.0/tools/libxl/libxl_create.c
 +        fprintf(stderr, "WARNING: before adding vkb device.\n");
 +        for (i = 0; i < d_config->num_vkbs; i++) {
 +            fprintf(stderr, "WARNING: adding vkb device.\n");
-+            libxl__device_vkb_add(gc, domid, &d_config->vkbs[i]);
++            libxl__device_add(gc, domid, &libxl__vkb_devtype, &d_config->vkbs[i]);
 +        }
 +
          for (i = 0; i < d_config->num_vfbs; i++) {
@@ -288,37 +288,33 @@ Index: xen-4.10.0/tools/libxl/libxl_nic.c
 ===================================================================
 --- xen-4.10.0.orig/tools/libxl/libxl_nic.c
 +++ xen-4.10.0/tools/libxl/libxl_nic.c
-@@ -145,6 +145,8 @@ static int libxl__set_xenstore_nic(libxl
+@@ -145,6 +145,9 @@ static int libxl__set_xenstore_nic(libxl
                                     flexarray_t *back, flexarray_t *front,
                                     flexarray_t *ro_front)
  {
 +    libxl_uuid uuid;
++    libxl__device *device;
 +
      flexarray_grow(back, 2);
  
      if (nic->script)
-@@ -252,6 +254,9 @@ static int libxl__set_xenstore_nic(libxl
+@@ -252,6 +255,16 @@ static int libxl__set_xenstore_nic(libxl
      flexarray_append(front, "mac");
      flexarray_append(front, GCSPRINTF(
                                      LIBXL_MAC_FMT, LIBXL_MAC_BYTES(nic->mac)));
 +    libxl_domid_to_uuid(CTX, &uuid, nic->backend_domid);
 +    flexarray_append(front, "backend-uuid");
 +    flexarray_append(front, GCSPRINTF("%s", libxl__uuid2string(gc, uuid)));
- 
-     return 0;
- }
-@@ -391,6 +396,11 @@ static int libxl__nic_from_xenstore(libx
-     nic->model = NULL; /* XXX Only for TYPE_IOEMU */
-     nic->ifname = NULL; /* XXX Only for TYPE_IOEMU */
- 
++
++    GCNEW(device);
++    libxl__device_from_nic(gc, domid, nic, device);
 +    libxl__xs_printf(gc, XBT_NULL,
 +                     GCSPRINTF("%s/hotplug-status",
 +                               libxl__device_backend_path(gc, device)),
 +                     "connected");
-+
-     rc = 0;
-  out:
-     return rc;
+ 
+     return 0;
+ }
 Index: xen-4.10.0/tools/libxl/libxl_qmp.c
 ===================================================================
 --- xen-4.10.0.orig/tools/libxl/libxl_qmp.c
@@ -592,13 +588,24 @@ Index: xen-4.10.0/tools/libxl/libxl_console.c
 ===================================================================
 --- xen-4.10.0.orig/tools/libxl/libxl_console.c
 +++ xen-4.10.0/tools/libxl/libxl_console.c
-@@ -758,6 +758,11 @@ static int libxl__set_xenstore_vfb(libxl
+@@ -740,6 +740,8 @@ static int libxl__set_xenstore_vfb(libxl
+                                   flexarray_t *back, flexarray_t *front,
+                                   flexarray_t *ro_front)
+ {
++    libxl__device *device;
++
+     flexarray_append_pair(back, "vnc",
+                           libxl_defbool_val(vfb->vnc.enable) ? "1" : "0");
+     flexarray_append_pair(back, "vnclisten", vfb->vnc.listen);
+@@ -758,6 +760,13 @@ static int libxl__set_xenstore_vfb(libxl
      if (vfb->sdl.display) {
          flexarray_append_pair(back, "display", vfb->sdl.display);
      }
++    GCNEW(device);
++    libxl__device_from_vfb(gc, domid, vfb, device);
 +    libxl__xs_printf(gc, XBT_NULL,
 +                     GCSPRINTF("%s/hotplug-status",
-+                               libxl__device_backend_path(gc, &device)),
++                               libxl__device_backend_path(gc, device)),
 +                     "connected");
 +
  

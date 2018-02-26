@@ -97,6 +97,7 @@ do_configure_prepend() {
 }
 
 do_compile() {
+    oe_runmake -C tools/libs subdir-all-toolcore
     oe_runmake -C tools subdir-all-include
     oe_runmake LDLIBS_libxenctrl='-lxenctrl' \
 		       LDLIBS_libxenstore='-lxenstore' \

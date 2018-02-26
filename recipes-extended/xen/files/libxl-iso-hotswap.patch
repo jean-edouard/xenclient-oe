@@ -127,7 +127,7 @@ Index: xen-4.10.0/tools/libxl/libxl_disk.c
 +    disk_empty.vdev = libxl__strdup(NOGC, olddisk->vdev);
 +    disk_empty.pdev_path = libxl__strdup(NOGC, "");
 +    disk_empty.is_cdrom = 1;
-+    libxl__device_disk_setdefault(gc, &disk_empty, domid);
++    libxl__device_disk_setdefault(gc, domid, &disk_empty, true);
 +
 +    lock = libxl__lock_domain_userdata(gc, domid);
 +    if (!lock) {
