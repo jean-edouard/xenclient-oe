@@ -38,6 +38,70 @@ INTERNAL DEPENDENCIES
 ################################################################################
 PATCHES 
 ################################################################################
+Index: xen-4.10.0/xen/arch/x86/irq.c
+===================================================================
+--- xen-4.10.0.orig/xen/arch/x86/irq.c
++++ xen-4.10.0/xen/arch/x86/irq.c
+@@ -2669,8 +2669,36 @@ int allocate_and_map_msi_pirq(struct dom
+         irq = index;
+         if ( irq == -1 )
+         {
+-    case MAP_PIRQ_TYPE_MULTI_MSI:
+             irq = create_irq(NUMA_NO_NODE);
++            /* Allow stubdomain to deal with this IRQ. */
++            if ( d == current->domain->target )
++            {
++                ret = irq_permit_access(current->domain, irq);
++                if ( ret )
++                    printk(XENLOG_G_ERR "Could not grant stubdom%u access to IRQ%d (error %d)\n",
++                           current->domain->domain_id, irq, ret);
++            }
++	}
++
++        if ( irq < nr_irqs_gsi || irq >= nr_irqs )
++        {
++            dprintk(XENLOG_G_ERR, "dom%d: can't create irq for msi!\n",
++                    d->domain_id);
++            return -EINVAL;
++        }
++
++        msi->irq = irq;
++        break;
++    case MAP_PIRQ_TYPE_MULTI_MSI:
++        irq = create_irq(NUMA_NO_NODE);
++        /* Allow stubdomain to deal with this IRQ. */
++        if ( d == current->domain->target )
++        {
++            ret = irq_permit_access(current->domain, irq);
++            if ( ret )
++                printk(XENLOG_G_ERR "Could not grant stubdom%u access to IRQ%d (error %d)\n",
++                       current->domain->domain_id, irq, ret);
++
+         }
+ 
+         if ( irq < nr_irqs_gsi || irq >= nr_irqs )
+@@ -2715,8 +2743,20 @@ int allocate_and_map_msi_pirq(struct dom
+         {
+         case MAP_PIRQ_TYPE_MSI:
+             if ( index == -1 )
++            {
++                if ( (d == current->domain->target) &&
++                     irq_deny_access(current->domain, irq) )
++                    printk(XENLOG_G_ERR "dom%d: could not revoke access to IRQ%d.\n",
++                           d->domain_id, irq );
++		destroy_irq(irq);
++            }
++            break;
+         case MAP_PIRQ_TYPE_MULTI_MSI:
+-                destroy_irq(irq);
++            destroy_irq(irq);
++            if ( (d == current->domain->target) &&
++                  irq_deny_access(current->domain, irq) )
++                printk(XENLOG_G_ERR "dom%d: could not revoke access to IRQ%d.\n",
++                       d->domain_id, irq );
+             break;
+         }
+     }
 Index: xen-4.10.0/xen/arch/x86/physdev.c
 ===================================================================
 --- xen-4.10.0.orig/xen/arch/x86/physdev.c
@@ -61,68 +125,3 @@ Index: xen-4.10.0/xen/arch/x86/physdev.c
      ret = unmap_domain_pirq(d, pirq);
      spin_unlock(&d->event_lock);
      pcidevs_unlock();
-Index: xen-4.10.0/xen/arch/x86/irq.c
-===================================================================
---- xen-4.10.0.orig/xen/arch/x86/irq.c
-+++ xen-4.10.0/xen/arch/x86/irq.c
-@@ -2669,8 +2669,38 @@ int allocate_and_map_msi_pirq(struct dom
-         irq = index;
-         if ( irq == -1 )
-         {
--    case MAP_PIRQ_TYPE_MULTI_MSI:
-             irq = create_irq(NUMA_NO_NODE);
-+            /* Allow stubdomain to deal with this IRQ. */
-+            if ( d == current->domain->target )
-+            {
-+                ret = irq_permit_access(current->domain, irq);
-+                if ( ret )
-+                    printk(XENLOG_G_ERR "Could not grant stubdom%u access to IRQ%d (error %d)\n",
-+                           current->domain->domain_id, irq, ret);
-+
-+            }
-+        }
-+
-+        if ( irq < nr_irqs_gsi || irq >= nr_irqs )
-+        {
-+            dprintk(XENLOG_G_ERR, "dom%d: can't create irq for msi!\n",
-+                    d->domain_id);
-+            return -EINVAL;
-+        }
-+
-+        msi->irq = irq;
-+        break;
-+    case MAP_PIRQ_TYPE_MULTI_MSI:
-+        irq = create_irq(NUMA_NO_NODE);
-+        /* Allow stubdomain to deal with this IRQ. */
-+        if ( d == current->domain->target )
-+        {
-+            ret = irq_permit_access(current->domain, irq);
-+            if ( ret )
-+                printk(XENLOG_G_ERR "Could not grant stubdom%u access to IRQ%d (error %d)\n",
-+                       current->domain->domain_id, irq, ret);
-+
-+        }
-         }
- 
-         if ( irq < nr_irqs_gsi || irq >= nr_irqs )
-@@ -2716,7 +2746,20 @@ int allocate_and_map_msi_pirq(struct dom
-         case MAP_PIRQ_TYPE_MSI:
-             if ( index == -1 )
-         case MAP_PIRQ_TYPE_MULTI_MSI:
-+            {
-+                if ( (d == current->domain->target) &&
-+                     irq_deny_access(current->domain, irq) )
-+                    printk(XENLOG_G_ERR "dom%d: could not revoke access to IRQ%d.\n",
-+                           d->domain_id, irq );
-                 destroy_irq(irq);
-+            }
-+            break;
-+        case MAP_PIRQ_TYPE_MULTI_MSI:
-+            destroy_irq(irq);
-+            if ( (d == current->domain->target) &&
-+                  irq_deny_access(current->domain, irq) )
-+                printk(XENLOG_G_ERR "dom%d: could not revoke access to IRQ%d.\n",
-+                       d->domain_id, irq );
-             break;
-         }
-     }

@@ -93,12 +93,21 @@ Index: xen-4.10.0/xen/arch/x86/mm.c
          case XENMAPSPACE_grant_table:
              rc = gnttab_map_frame(d, idx, gpfn, &mfn);
              if ( rc )
-@@ -4126,18 +4134,18 @@ int xenmem_add_to_physmap_one(
+@@ -4119,25 +4127,26 @@ int xenmem_add_to_physmap_one(
+             break;
      }
  
-     /* Remove previously mapped page if it was present. */
--    prev_mfn = mfn_x(get_gfn(d, gfn_x(gpfn), &p2mt));
++    /* Remove previously mapped page if it was present. */
 +    prev_mfn = mfn_x(get_gfn(d, gpfn_new, &p2mt));
++
+     if ( mfn_eq(mfn, INVALID_MFN) )
+     {
+         rc = -EINVAL;
+         goto put_both;
+     }
+ 
+-    /* Remove previously mapped page if it was present. */
+-    prev_mfn = mfn_x(get_gfn(d, gfn_x(gpfn), &p2mt));
      if ( mfn_valid(_mfn(prev_mfn)) )
      {
          if ( is_xen_heap_mfn(prev_mfn) )
@@ -117,7 +126,7 @@ Index: xen-4.10.0/xen/arch/x86/mm.c
  
      if ( rc )
          goto put_both;
-@@ -4156,13 +4164,28 @@ int xenmem_add_to_physmap_one(
+@@ -4156,13 +4165,28 @@ int xenmem_add_to_physmap_one(
  
      /* Map at new location. */
      if ( !rc )
