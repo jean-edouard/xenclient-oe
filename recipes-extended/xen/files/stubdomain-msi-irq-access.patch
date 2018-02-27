@@ -65,11 +65,11 @@ Index: xen-4.10.0/xen/arch/x86/irq.c
 ===================================================================
 --- xen-4.10.0.orig/xen/arch/x86/irq.c
 +++ xen-4.10.0/xen/arch/x86/irq.c
-@@ -2670,7 +2670,41 @@ int allocate_and_map_msi_pirq(struct dom
+@@ -2669,8 +2669,38 @@ int allocate_and_map_msi_pirq(struct dom
+         irq = index;
          if ( irq == -1 )
          {
-     case MAP_PIRQ_TYPE_MULTI_MSI:
-+        if ( irq == -1 ) {
+-    case MAP_PIRQ_TYPE_MULTI_MSI:
              irq = create_irq(NUMA_NO_NODE);
 +            /* Allow stubdomain to deal with this IRQ. */
 +            if ( d == current->domain->target )
@@ -86,12 +86,10 @@ Index: xen-4.10.0/xen/arch/x86/irq.c
 +        {
 +            dprintk(XENLOG_G_ERR, "dom%d: can't create irq for msi!\n",
 +                    d->domain_id);
-+            ret = -EINVAL;
-+            goto free_domain;
++            return -EINVAL;
 +        }
 +
 +        msi->irq = irq;
-+        map_data = msi;
 +        break;
 +    case MAP_PIRQ_TYPE_MULTI_MSI:
 +        irq = create_irq(NUMA_NO_NODE);
@@ -107,7 +105,7 @@ Index: xen-4.10.0/xen/arch/x86/irq.c
          }
  
          if ( irq < nr_irqs_gsi || irq >= nr_irqs )
-@@ -2716,7 +2750,20 @@ int allocate_and_map_msi_pirq(struct dom
+@@ -2716,7 +2746,20 @@ int allocate_and_map_msi_pirq(struct dom
          case MAP_PIRQ_TYPE_MSI:
              if ( index == -1 )
          case MAP_PIRQ_TYPE_MULTI_MSI:
