@@ -119,8 +119,50 @@ forward)
     [ "${tpm2}" -eq 0 ] && hashalg="sha256"
 
     for p in ${static_pcrs}; do
-        pcr_params="${pcr_params} -p ${p}"
+        if [ p -ne 8 ]; then
+            pcr_params="${pcr_params} -p ${p}"
+        fi
     done
+
+    # PCR8 holds the hashes of OpenXT's UEFI files found on the ESP
+    if [ "${tpm2}" -ne 0 ]; then
+        pcr8=$(tpm2_listpcrs | grep PCR_08 | cut -f2 -d: | tr -d ' ' | tail -n1)
+    else
+        pcr8=$(grep PCR-08 ${TPM_DEV}/device/pcrs | cut -f2 -d: | tr -d ' ')
+    fi
+
+    # If PCR8 is all 0 we were not booting with UEFI
+    if [[ pcr8 = *[!0]* ]]; then
+        local ESP=$(sfdisk -l 2>/dev/null | grep "EFI System" | awk '{print $1}')
+        mkdir -p /tmp/esp
+        mount -o ro $ESP /tmp/esp || err "Failed to mount ESP"
+
+        hash=$(${hashalg}sum /tmp/esp/xen.efi | awk '{ print $1 }')
+        pcr8=$(hash_extend 0 $hash $hashalg) ||
+            err "failed to calculate pcr8"
+
+        hash=$(${hashalg}sum /tmp/esp/openxt.cfg | awk '{ print $1 }')
+        pcr8=$(hash_extend $pcr8 $hash $hashalg) ||
+            err "failed to calculate pcr8"
+
+        hash=$(${hashalg}sum /tmp/esp/bzImage | awk '{ print $1 }')
+        pcr8=$(hash_extend $pcr8 $hash $hashalg) ||
+            err "failed to calculate pcr8"
+
+        hash=$(${hashalg}sum /tmp/esp/initramfs.gz | awk '{ print $1 }')
+        pcr8=$(hash_extend $pcr8 $hash $hashalg) ||
+            err "failed to calculate pcr8"
+
+        hash=$(${hashalg}sum /tmp/esp/policy.24 | awk '{ print $1 }')
+        pcr8=$(hash_extend $pcr8 $hash $hashalg) ||
+            err "failed to calculate pcr8"
+
+        umount /tmp/esp
+
+        pcr_params="${pcr_params} -p 8:${pcr8}"
+    else
+        pcr_params="${pcr_params} -p 8"
+    fi
 
     # During early init, rootfs is hashed and is given to
     # tpm_extend which for tpm1.2 hashes the rootfs hash again and
@@ -132,19 +174,25 @@ forward)
 
     pcr_params="${pcr_params} -p 15:${pcr15}"
 
-    if [ -e /config/.txt-quirk ]; then
-        quirk=1
+    # Calculate DRTM PCRs only when booting legacy (ie. PCR8 is all 0)
+    if [[ pcr8 = *[0]* ]]; then
+        if [ -e /config/.txt-quirk ]; then
+            quirk=1
+        else
+            quirk=0
+        fi
+        pcrs=$(calculate_pcrs "/" /boot/system/grub/grub.cfg ${hashalg} ${quirk}) ||
+            err "failed to calculate pcrs"
+
+        pcr17=$(echo $pcrs | awk '{ print $1 }')
+        pcr18=$(echo $pcrs | awk '{ print $2 }')
+        pcr19=$(echo $pcrs | awk '{ print $3 }')
+
+        pcr_params="${pcr_params} -p 17:${pcr17} -p 18:${pcr18} -p 19:${pcr19}"
     else
-        quirk=0
+        pcr_params="${pcr_params} -p 17 -p 18 -p 19"
     fi
-    pcrs=$(calculate_pcrs "/" /boot/system/grub/grub.cfg ${hashalg} ${quirk}) ||
-        err "failed to calculate pcrs"
 
-    pcr17=$(echo $pcrs | awk '{ print $1 }')
-    pcr18=$(echo $pcrs | awk '{ print $2 }')
-    pcr19=$(echo $pcrs | awk '{ print $3 }')
-
-    pcr_params="${pcr_params} -p 17:${pcr17} -p 18:${pcr18} -p 19:${pcr19}"
     echo "$pcr_params" > /boot/system/tpm/forward_pcr.lst
 
     if [ -e "${sealed_key}" ]; then
