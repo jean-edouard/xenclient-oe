@@ -86,6 +86,7 @@ SRC_URI_append = " \
     file://libxl-stubdom-options.patch \
     file://libxl-support-hvm-readonly-disks.patch \
     file://libxl-pci-passthrough-fixes.patch \
+    file://libxl-vwif-support.patch \
     file://libxl-atapi-pt.patch \
     file://libxl-iso-hotswap.patch \
     file://libxl-disable-json-updates.patch \

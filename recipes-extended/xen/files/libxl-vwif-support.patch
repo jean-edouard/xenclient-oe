@@ -32,7 +32,7 @@ Index: xen-4.10.0/tools/libxl/libxl_device.c
 ===================================================================
 --- xen-4.10.0.orig/tools/libxl/libxl_device.c
 +++ xen-4.10.0/tools/libxl/libxl_device.c
-@@ -741,7 +741,8 @@ int libxl__device_destroy(libxl__gc *gc,
+@@ -755,7 +755,8 @@ int libxl__device_destroy(libxl__gc *gc,
              libxl__xs_path_cleanup(gc, t, be_path);
          }
  
@@ -42,7 +42,7 @@ Index: xen-4.10.0/tools/libxl/libxl_device.c
              libxl__xs_path_cleanup(gc, t, be_path);
          }
  
-@@ -1282,7 +1283,9 @@ static void device_destroy_be_watch_cb(l
+@@ -1296,7 +1297,9 @@ static void device_destroy_be_watch_cb(l
       * in xenstore. NDVM doesn't do that, so let's not wait forever
       * here. libxl will take care of the xenstore nodes later
       */
@@ -53,7 +53,7 @@ Index: xen-4.10.0/tools/libxl/libxl_device.c
          /* backend path still exists, wait a little longer... */
          return;
      }
-@@ -1414,6 +1417,15 @@ int libxl__device_nextid(libxl__gc *gc,
+@@ -1428,6 +1431,15 @@ int libxl__device_nextid(libxl__gc *gc,
      else
          nextid = strtoul(l[nb - 1], NULL, 10) + 1;
  
@@ -69,7 +69,7 @@ Index: xen-4.10.0/tools/libxl/libxl_device.c
      return nextid;
  }
  
-@@ -1552,9 +1564,11 @@ static int add_device(libxl__egc *egc, l
+@@ -1566,9 +1578,11 @@ static int add_device(libxl__egc *egc, l
  
      switch(dev->backend_kind) {
      case LIBXL__DEVICE_KIND_VBD:
@@ -83,7 +83,7 @@ Index: xen-4.10.0/tools/libxl/libxl_device.c
  
          GCNEW(aodev);
          libxl__prepare_ao_device(ao, aodev);
-@@ -1600,9 +1614,11 @@ static int remove_device(libxl__egc *egc
+@@ -1614,9 +1628,11 @@ static int remove_device(libxl__egc *egc
  
      switch(ddev->dev->backend_kind) {
      case LIBXL__DEVICE_KIND_VBD:
@@ -117,12 +117,13 @@ Index: xen-4.10.0/tools/libxl/libxl_dm.c
                  flexarray_append(dm_args, "-netdev");
                  flexarray_append(dm_args,
                                   GCSPRINTF("type=tap,id=net%d,ifname=%s,"
-@@ -1768,6 +1771,8 @@ static void libxl__dm_vifs_from_hvm_gues
+@@ -1803,6 +1806,9 @@ static void libxl__dm_vifs_from_hvm_gues
          libxl_device_nic_init(&dm_config->nics[i]);
          libxl_device_nic_copy(ctx, &dm_config->nics[i], &guest_config->nics[i]);
          dm_config->nics[i].nictype = LIBXL_NIC_TYPE_VIF;
 +        /* Stubdoms use Linux netfront, which doesn't handle VWIFs */
 +        libxl_defbool_set(&dm_config->nics[i].wireless, false);
++
          if (dm_config->nics[i].ifname)
              dm_config->nics[i].ifname = GCSPRINTF("%s" TAP_DEVICE_SUFFIX,
                                                    dm_config->nics[i].ifname);
@@ -179,7 +180,7 @@ Index: xen-4.10.0/tools/libxl/libxl_nic.c
  
      return 0;
  }
-@@ -293,6 +300,10 @@ static int libxl__nic_from_xenstore(libx
+@@ -301,6 +308,10 @@ static int libxl__nic_from_xenstore(libx
          rc = ERROR_FAIL;
          goto out;
      }
@@ -190,7 +191,7 @@ Index: xen-4.10.0/tools/libxl/libxl_nic.c
      rc = libxl__backendpath_parse_domid(gc, tmp, &nic->backend_domid);
      if (rc) goto out;
  
-@@ -421,6 +432,11 @@ int libxl_devid_to_device_nic(libxl_ctx
+@@ -424,6 +435,10 @@ int libxl_devid_to_device_nic(libxl_ctx
      libxl_path = GCSPRINTF("%s/device/vif/%d", libxl_dom_path, devid);
  
      rc = libxl__nic_from_xenstore(gc, libxl_path, devid, nic);
@@ -198,11 +199,10 @@ Index: xen-4.10.0/tools/libxl/libxl_nic.c
 +        libxl_path = GCSPRINTF("%s/device/vwif/%d", libxl_dom_path, devid);
 +        rc = libxl__nic_from_xenstore(gc, libxl_path, devid, nic);
 +    }
-+
      if (rc) goto out;
  
      rc = 0;
-@@ -458,9 +474,15 @@ int libxl_device_nic_getinfo(libxl_ctx *
+@@ -461,9 +476,16 @@ int libxl_device_nic_getinfo(libxl_ctx *
      dompath = libxl__xs_get_dompath(gc, domid);
      nicinfo->devid = nic->devid;
  
@@ -218,6 +218,7 @@ Index: xen-4.10.0/tools/libxl/libxl_nic.c
 +        libxl_path = GCSPRINTF("%s/device/vif/%d",
 +                               libxl__xs_libxl_path(gc, domid), nicinfo->devid);
 +    }
++
      nicinfo->backend = xs_read(ctx->xsh, XBT_NULL,
                                  GCSPRINTF("%s/backend", libxl_path), NULL);
      if (!nicinfo->backend) {
@@ -225,7 +226,7 @@ Index: xen-4.10.0/tools/libxl/libxl_types.idl
 ===================================================================
 --- xen-4.10.0.orig/tools/libxl/libxl_types.idl
 +++ xen-4.10.0/tools/libxl/libxl_types.idl
-@@ -697,6 +697,7 @@ libxl_device_nic = Struct("device_nic",
+@@ -696,6 +696,7 @@ libxl_device_nic = Struct("device_nic",
      ("rate_bytes_per_interval", uint64),
      ("rate_interval_usecs", uint32),
      ("gatewaydev", string),
@@ -233,6 +234,18 @@ Index: xen-4.10.0/tools/libxl/libxl_types.idl
      # Note that the COLO configuration settings should be considered unstable.
      # They may change incompatibly in future versions of Xen.
      ("coloft_forwarddev", string),
+Index: xen-4.10.0/tools/libxl/libxl_types_internal.idl
+===================================================================
+--- xen-4.10.0.orig/tools/libxl/libxl_types_internal.idl
++++ xen-4.10.0/tools/libxl/libxl_types_internal.idl
+@@ -28,6 +28,7 @@ libxl__device_kind = Enumeration("device
+     (11, "9PFS"),
+     (12, "VDISPL"),
+     (13, "VUART"),
++    (14, "VWIF"),
+     ])
+ 
+ libxl__console_backend = Enumeration("console_backend", [
 Index: xen-4.10.0/tools/xl/xl_parse.c
 ===================================================================
 --- xen-4.10.0.orig/tools/xl/xl_parse.c
