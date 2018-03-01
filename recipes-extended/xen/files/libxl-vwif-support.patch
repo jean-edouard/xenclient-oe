@@ -32,7 +32,7 @@ Index: xen-4.10.0/tools/libxl/libxl_device.c
 ===================================================================
 --- xen-4.10.0.orig/tools/libxl/libxl_device.c
 +++ xen-4.10.0/tools/libxl/libxl_device.c
-@@ -755,7 +755,8 @@ int libxl__device_destroy(libxl__gc *gc,
+@@ -741,7 +741,8 @@ int libxl__device_destroy(libxl__gc *gc,
              libxl__xs_path_cleanup(gc, t, be_path);
          }
  
@@ -42,7 +42,7 @@ Index: xen-4.10.0/tools/libxl/libxl_device.c
              libxl__xs_path_cleanup(gc, t, be_path);
          }
  
-@@ -1296,7 +1297,9 @@ static void device_destroy_be_watch_cb(l
+@@ -1282,7 +1283,9 @@ static void device_destroy_be_watch_cb(l
       * in xenstore. NDVM doesn't do that, so let's not wait forever
       * here. libxl will take care of the xenstore nodes later
       */
@@ -53,7 +53,7 @@ Index: xen-4.10.0/tools/libxl/libxl_device.c
          /* backend path still exists, wait a little longer... */
          return;
      }
-@@ -1428,6 +1431,15 @@ int libxl__device_nextid(libxl__gc *gc,
+@@ -1414,6 +1417,15 @@ int libxl__device_nextid(libxl__gc *gc,
      else
          nextid = strtoul(l[nb - 1], NULL, 10) + 1;
  
@@ -69,7 +69,7 @@ Index: xen-4.10.0/tools/libxl/libxl_device.c
      return nextid;
  }
  
-@@ -1566,9 +1578,11 @@ static int add_device(libxl__egc *egc, l
+@@ -1552,9 +1564,11 @@ static int add_device(libxl__egc *egc, l
  
      switch(dev->backend_kind) {
      case LIBXL__DEVICE_KIND_VBD:
@@ -83,7 +83,7 @@ Index: xen-4.10.0/tools/libxl/libxl_device.c
  
          GCNEW(aodev);
          libxl__prepare_ao_device(ao, aodev);
-@@ -1614,9 +1628,11 @@ static int remove_device(libxl__egc *egc
+@@ -1600,9 +1614,11 @@ static int remove_device(libxl__egc *egc
  
      switch(ddev->dev->backend_kind) {
      case LIBXL__DEVICE_KIND_VBD:
@@ -97,6 +97,16 @@ Index: xen-4.10.0/tools/libxl/libxl_device.c
  
          GCNEW(aodev);
          libxl__prepare_ao_device(ao, aodev);
+@@ -1937,7 +1953,8 @@ void libxl__device_add_async(libxl__egc
+     aodev->action = LIBXL__DEVICE_ACTION_ADD;
+     libxl__wait_device_connection(egc, aodev);
+ 
+-    if (device->backend_kind == LIBXL__DEVICE_KIND_VIF)
++    if (device->backend_kind == LIBXL__DEVICE_KIND_VIF ||
++        device->backend_kind == LIBXL__DEVICE_KIND_VWIF)
+         libxl__xs_printf(gc, XBT_NULL,
+                          GCSPRINTF("%s/hotplug-status",
+                                    libxl__device_backend_path(gc, device)),
 Index: xen-4.10.0/tools/libxl/libxl_dm.c
 ===================================================================
 --- xen-4.10.0.orig/tools/libxl/libxl_dm.c
@@ -117,7 +127,7 @@ Index: xen-4.10.0/tools/libxl/libxl_dm.c
                  flexarray_append(dm_args, "-netdev");
                  flexarray_append(dm_args,
                                   GCSPRINTF("type=tap,id=net%d,ifname=%s,"
-@@ -1803,6 +1806,9 @@ static void libxl__dm_vifs_from_hvm_gues
+@@ -1768,6 +1771,9 @@ static void libxl__dm_vifs_from_hvm_gues
          libxl_device_nic_init(&dm_config->nics[i]);
          libxl_device_nic_copy(ctx, &dm_config->nics[i], &guest_config->nics[i]);
          dm_config->nics[i].nictype = LIBXL_NIC_TYPE_VIF;
@@ -180,7 +190,7 @@ Index: xen-4.10.0/tools/libxl/libxl_nic.c
  
      return 0;
  }
-@@ -301,6 +308,10 @@ static int libxl__nic_from_xenstore(libx
+@@ -293,6 +300,10 @@ static int libxl__nic_from_xenstore(libx
          rc = ERROR_FAIL;
          goto out;
      }
@@ -191,7 +201,7 @@ Index: xen-4.10.0/tools/libxl/libxl_nic.c
      rc = libxl__backendpath_parse_domid(gc, tmp, &nic->backend_domid);
      if (rc) goto out;
  
-@@ -424,6 +435,10 @@ int libxl_devid_to_device_nic(libxl_ctx
+@@ -416,6 +427,10 @@ int libxl_devid_to_device_nic(libxl_ctx
      libxl_path = GCSPRINTF("%s/device/vif/%d", libxl_dom_path, devid);
  
      rc = libxl__nic_from_xenstore(gc, libxl_path, devid, nic);
@@ -202,7 +212,7 @@ Index: xen-4.10.0/tools/libxl/libxl_nic.c
      if (rc) goto out;
  
      rc = 0;
-@@ -461,9 +476,16 @@ int libxl_device_nic_getinfo(libxl_ctx *
+@@ -453,9 +468,16 @@ int libxl_device_nic_getinfo(libxl_ctx *
      dompath = libxl__xs_get_dompath(gc, domid);
      nicinfo->devid = nic->devid;
  
