@@ -1,13 +1,11 @@
 # Force 64-bit version.
-# Cheat and use the host environment. This would normaly use glibc headers to
-# figure out basic informations. While using the headers might just work, using
-# the 32bit libc of the target environment is just a recipe for failure.
-# If this cannot be built in the target sysroot, there is not point in even
-# using it, so build against the HOST, require the amd64 libc6 headers and
-# pray.
-# Forgive me, this is the sacrifice of what sanity I have left.
-# If anything, this is yet another proof, if one is still required, that
-# someone has to take the time to make dom0 64bits.
+# Cheat and use the host environment. This would normaly use glibc headers from
+# the target sysroot to figure out basic informations. It becomes a problem as
+# gnu-efi is forced in 64bit and will redefine critical macros.
+# Since this only produce static libraries, c-runtime and ld scripts, use and
+# rely on the host capabilities.
+# Requires libc64 headers on the host (debian libc6-dev-amd64).
+# This will no longer be necessary with a 64bit target environement.
 EXTRA_OEMAKE = " \
     'ARCH=x86_64' \
     'RANLIB=${RANLIB}' \
