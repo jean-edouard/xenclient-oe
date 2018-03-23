@@ -260,7 +260,7 @@ set_luks_key() {
     local target="${3}"
     local slot="${4}"
 
-    cryptsetup -q -d ${unlock_key} luksKillSlot ${target} ${slot} >/dev/null 2>&1
+    cryptsetup -q luksRemoveKey ${target} ${unlock_key} >/dev/null 2>&1 || true
     cryptsetup -q -d ${unlock_key} -S ${slot} -i 600 luksAddKey ${target} ${key_file} || {
         echo "failed to add crypto key to config LUKS" >&2
         return 1
@@ -420,7 +420,7 @@ clear_luks_key() {
     local target="${2}"
     local slot="${3}"
 
-    cryptsetup -q -d ${unlock_key} luksKillSlot ${target} ${slot} >/dev/null 2>&1
+    cryptsetup -q luksRemoveKey ${target} ${unlock_key} >/dev/null 2>&1
 }
 
 # Clear the recovery key on a cryptdisk
