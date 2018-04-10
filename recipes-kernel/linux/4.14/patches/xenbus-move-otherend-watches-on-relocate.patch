@@ -36,10 +36,10 @@ Required for service VM network disagregation.
 ################################################################################
 PATCHES 
 ################################################################################
-Index: linux-4.14.22/drivers/xen/xenbus/xenbus_probe.c
+Index: linux-4.14.33/drivers/xen/xenbus/xenbus_probe.c
 ===================================================================
---- linux-4.14.22.orig/drivers/xen/xenbus/xenbus_probe.c
-+++ linux-4.14.22/drivers/xen/xenbus/xenbus_probe.c
+--- linux-4.14.33.orig/drivers/xen/xenbus/xenbus_probe.c
++++ linux-4.14.33/drivers/xen/xenbus/xenbus_probe.c
 @@ -541,12 +541,36 @@ static int strsep_len(const char *str, c
  	return (len == 0) ? i : -ERANGE;
  }
