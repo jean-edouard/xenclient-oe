@@ -3,6 +3,7 @@ DESCRIPTION = "Linux kernel for OpenXT service VMs."
 # Use the one from meta-openembedded/meta-oe
 require recipes-kernel/linux/linux.inc
 require recipes-kernel/linux/linux-openxt.inc
+require recipes-kernel/linux/linux-openxt-4.14.inc
 
 PV_MAJOR = "${@"${PV}".split('.', 3)[0]}"
 INSANE_SKIP_kernel-module-txt = "arch"
