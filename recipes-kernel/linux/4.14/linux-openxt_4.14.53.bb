@@ -47,6 +47,8 @@ SRC_URI += "${KERNELORG_MIRROR}/linux/kernel/v${PV_MAJOR}.x/linux-${PV}.tar.xz;n
     file://0001-mm-handle_mm_fault-xen_pmd_val-radix_tree_lookup_slo.patch;patch=1 \
     file://defconfig \
     "
+SRC_URI_append_xenclient-dom0 = "file://efi-tables-for-dom0.patch;patch=1 \ 
+	"
 
 SRC_URI[kernel.md5sum] = "bfbc0300cfac4b00fd7cee1d95082d92"
 SRC_URI[kernel.sha256sum] = "a85f2572f97dc551f4a159d0c0858e6f40b925afd2d14a0aa25ee9238da80bbf"
