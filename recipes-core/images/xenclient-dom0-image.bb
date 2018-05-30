@@ -52,6 +52,9 @@ post_rootfs_shell_commands() {
     # Change root shell.
     sed -i 's|root:x:0:0:root:/root:/bin/sh|root:x:0:0:root:/root:/bin/bash|' ${IMAGE_ROOTFS}/etc/passwd
 
+    # Save root bash history in /tmp
+    echo "export HISTFILE=/tmp/.bash_history" >> /root/.bashrc
+
     mkdir -p ${IMAGE_ROOTFS}/config/etc
     mv ${IMAGE_ROOTFS}/etc/passwd ${IMAGE_ROOTFS}/config/etc
     mv ${IMAGE_ROOTFS}/etc/shadow ${IMAGE_ROOTFS}/config/etc
