@@ -11,10 +11,6 @@ RDEPENDS_${PN} = " \
     xfwm4-theme-default \
     xfce4-session \     
     xfconf \
-    \
     gtk-xfce-engine \
-    xfce4-appfinder \
-    xfce4-settings \
-    \
     xfce4-notifyd \
 "
