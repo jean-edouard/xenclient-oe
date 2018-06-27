@@ -187,24 +187,8 @@ forward)
 
     pcr_params="${pcr_params} -p 15:${pcr15}"
 
-    # Calculate DRTM PCRs only when booting legacy (ie. PCR8 is all 0)
-    if [[ "${pcr8}" = *[0]* ]]; then
-        if [ -e /config/.txt-quirk ]; then
-            quirk=1
-        else
-            quirk=0
-        fi
-        pcrs=$(calculate_pcrs "/" /boot/system/grub/grub.cfg ${hashalg} ${quirk}) ||
-            err "failed to calculate pcrs"
-
-        pcr17=$(echo $pcrs | awk '{ print $1 }')
-        pcr18=$(echo $pcrs | awk '{ print $2 }')
-        pcr19=$(echo $pcrs | awk '{ print $3 }')
-
-        pcr_params="${pcr_params} -p 17:${pcr17} -p 18:${pcr18} -p 19:${pcr19}"
-    else
-        pcr_params="${pcr_params} -p 17 -p 18 -p 19"
-    fi
+    # Hack: no pcr 17 18 19 computation
+    pcr_params="${pcr_params} -p 17 -p 18 -p 19"
 
     echo "$pcr_params" > /boot/system/tpm/forward_pcr.lst
 
