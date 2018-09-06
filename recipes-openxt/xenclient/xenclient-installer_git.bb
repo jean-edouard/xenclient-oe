@@ -20,7 +20,6 @@ FILES_${PN}-part2 = "/*"
 RDEPENDS_${PN} = " \
     busybox \
     xenclient-eula \
-    xenclient-keyboard-list \
     xenclient-repo-certs \
     xenclient-caps \
 "
