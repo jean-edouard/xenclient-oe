@@ -6,7 +6,8 @@ DEPENDS = "json-c libwebsockets libv4v dbus libxml2"
 PV = "0+git${SRCPV}"
 
 SRCREV = "${AUTOREV}"
-SRC_URI = "git://${OPENXT_GIT_MIRROR}/xctools.git;protocol=${OPENXT_GIT_PROTOCOL};branch=${OPENXT_BRANCH} \
+# git://${OPENXT_GIT_MIRROR}/xctools.git;protocol=${OPENXT_GIT_PROTOCOL};branch=${OPENXT_BRANCH}
+SRC_URI = "git://github.com/tijko/xctools.git;protocol=${OPENXT_GIT_PROTOCOL};branch=master \
            file://rpc-broker.initscript                                                                   \
            file://rpc-broker.rules                                                                        \
           "
