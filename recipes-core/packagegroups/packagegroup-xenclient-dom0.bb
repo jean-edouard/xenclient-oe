@@ -89,7 +89,8 @@ RDEPENDS_${PN} = " \
     gobi-loader \
     usb-modeswitch \
     upgrade-db \
-    rpc-proxy \
+    rpc-broker \
+    dom0-rpc-broker-config \
     dbd \
     xenclient-language-sync \
     atapi-pt-helper \
