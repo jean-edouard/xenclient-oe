@@ -1,3 +1,4 @@
+DEFAULT_ENFORCING = "permissive"
 FILESEXTRAPATHS_prepend := "${THISDIR}/${BPN}-${PV}:"
 
 # Configuration.
@@ -64,6 +65,9 @@ SRC_URI += " \
     file://policy/modules/services/rpcproxy.fc \
     file://policy/modules/services/rpcproxy.if \
     file://policy/modules/services/rpcproxy.te \
+    file://policy/modules/services/rpcbroker.fc \
+    file://policy/modules/services/rpcbroker.if \
+    file://policy/modules/services/rpcbroker.te \
     file://policy/modules/services/surfman.fc \
     file://policy/modules/services/surfman.if \
     file://policy/modules/services/surfman.te \
