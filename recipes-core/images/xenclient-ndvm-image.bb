@@ -61,10 +61,10 @@ IMAGE_INSTALL = " \
     wget \
     ethtool \
     carrier-detect \
-    xenclient-nws \
     modemmanager \
     ppp \
     iputils-ping \
+    xenclient-nws \
 "
 
 require xenclient-image-common.inc
