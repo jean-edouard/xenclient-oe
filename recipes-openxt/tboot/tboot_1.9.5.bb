@@ -20,6 +20,8 @@ SRC_URI = "http://downloads.sourceforge.net/tboot/tboot-${PV}.tar.gz \
            file://tpm2-orderly-shutdown.patch \
            file://tboot-export-of-tpm-event-log.patch \
            file://tboot-64.patch \
+           file://tboot-find-e820-regions-that-include-the-limit.patch \
+           file://tboot-add-support-for-launching-64-bit-PE-kernels.patch \
            "
 
 SRC_URI[md5sum] = "7946ed861628fab1e6d5e35fbcc5d614"
