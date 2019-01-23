@@ -35,3 +35,4 @@ PACKAGECONFIG_CONFARGS += " \
 "
 
 DEPENDS += "libpng"
+PARALLEL_MAKE = ""
