@@ -1,7 +1,7 @@
-From 4412c46d5ce1f392e1893c443ef0a6d4a8441cc0 Mon Sep 17 00:00:00 2001
+From 0e07357610dfc58b83f1fd5b85505adffa3a99af Mon Sep 17 00:00:00 2001
 From: Eric Chanudet <chanudete@ainfosec.com>
 Date: Wed, 3 Oct 2018 14:22:09 -0400
-Subject: [PATCH] tboot: Unmask NMI potentially masked during SENTER
+Subject: [PATCH 14/18] tboot: Unmask NMI potentially masked during SENTER
 
 Add an IRET-to-self entry point ot re-enable NMI and do so right after
 re-enabling SMI on BSP and APs. NMIs should be reactivated late to
@@ -51,18 +51,18 @@ index 47feaff..28463ff 100644
   * interrupt handler
   */
 diff --git a/tboot/txt/txt.c b/tboot/txt/txt.c
-index 3021c97..1293fc2 100644
+index 79dc733..d156275 100644
 --- a/tboot/txt/txt.c
 +++ b/tboot/txt/txt.c
-@@ -88,6 +88,7 @@ extern void apply_policy(tb_error_t error);
- extern void cpu_wakeup(uint32_t cpuid, uint32_t sipi_vec);
+@@ -89,6 +89,7 @@ extern void cpu_wakeup(uint32_t cpuid, uint32_t sipi_vec);
  extern void print_event(const tpm12_pcr_event_t *evt);
  extern void print_event_2(void *evt, uint16_t alg);
+ extern uint32_t print_event_2_1(void *evt);
 +extern void nmi_enable(void);
  
- 
  /*
-@@ -759,6 +760,10 @@ static void txt_wakeup_cpus(void)
+  * this is the structure whose addr we'll put in TXT heap
+@@ -834,6 +835,10 @@ static void txt_wakeup_cpus(void)
      printk(TBOOT_DETA"enabling SMIs on BSP\n");
      __getsec_smctrl();
  
@@ -73,7 +73,7 @@ index 3021c97..1293fc2 100644
      atomic_set(&ap_wfs_count, 0);
  
      /* RLPs will use our GDT and CS */
-@@ -1221,6 +1226,10 @@ void txt_cpu_wakeup(void)
+@@ -1293,6 +1298,10 @@ void txt_cpu_wakeup(void)
      printk(TBOOT_DETA"enabling SMIs on cpu %u\n", cpuid);
      __getsec_smctrl();
  
@@ -85,5 +85,5 @@ index 3021c97..1293fc2 100644
      if ( use_mwait() )
          ap_wait(cpuid);
 -- 
-2.18.0
+2.20.1
 

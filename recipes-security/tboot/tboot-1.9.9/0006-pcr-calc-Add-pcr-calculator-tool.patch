@@ -1,7 +1,7 @@
-From 02542c06dfbb13cf2c686076f61dfb19c8eb0530 Mon Sep 17 00:00:00 2001
+From a64d16dcc2c4b37c7b0ab4ffdbf1a526608a34a3 Mon Sep 17 00:00:00 2001
 From: Eric Chanudet <chanudete@ainfosec.com>
 Date: Mon, 13 Aug 2018 12:10:22 -0400
-Subject: [PATCH 15/22] pcr-calc: Add pcr calculator tool.
+Subject: [PATCH 06/18] pcr-calc: Add pcr calculator tool.
 
 Usage:
 module_hash [-hjz] [-e hash_str] -c cmd_line module_file\n
@@ -16,21 +16,21 @@ module_hash [-hjz] [-e hash_str] -c cmd_line module_file\n
 Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 ---
  Makefile               |   2 +-
- pcr-calc/Makefile      |  70 ++++++++
- pcr-calc/eventlog.c    | 119 ++++++++++++++
- pcr-calc/eventlog.h    |  42 +++++
- pcr-calc/hash.c        | 210 ++++++++++++++++++++++++
- pcr-calc/heap.h        | 354 ++++++++++++++++++++++++++++++++++++++++
- pcr-calc/module_hash.c | 427 +++++++++++++++++++++++++++++++++++++++++++++++++
- pcr-calc/pcr-calc.c    | 352 ++++++++++++++++++++++++++++++++++++++++
- pcr-calc/tb_policy.c   |  82 ++++++++++
+ pcr-calc/Makefile      |  70 +++++++
+ pcr-calc/eventlog.c    | 119 ++++++++++++
+ pcr-calc/eventlog.h    |  42 ++++
+ pcr-calc/hash.c        | 210 ++++++++++++++++++++
+ pcr-calc/heap.h        | 354 ++++++++++++++++++++++++++++++++++
+ pcr-calc/module_hash.c | 427 +++++++++++++++++++++++++++++++++++++++++
+ pcr-calc/pcr-calc.c    | 376 ++++++++++++++++++++++++++++++++++++
+ pcr-calc/tb_policy.c   |  82 ++++++++
  pcr-calc/tb_policy.h   |  43 +++++
- pcr-calc/tpm.c         | 391 ++++++++++++++++++++++++++++++++++++++++++++
- pcr-calc/tpm.h         | 167 +++++++++++++++++++
- pcr-calc/util.c        | 134 ++++++++++++++++
- pcr-calc/util.h        |  45 ++++++
- pcr-calc/uuid.h        |  53 ++++++
- 15 files changed, 2490 insertions(+), 1 deletion(-)
+ pcr-calc/tpm.c         | 408 +++++++++++++++++++++++++++++++++++++++
+ pcr-calc/tpm.h         | 186 ++++++++++++++++++
+ pcr-calc/util.c        | 167 ++++++++++++++++
+ pcr-calc/util.h        |  46 +++++
+ pcr-calc/uuid.h        |  53 +++++
+ 15 files changed, 2584 insertions(+), 1 deletion(-)
  create mode 100644 pcr-calc/Makefile
  create mode 100644 pcr-calc/eventlog.c
  create mode 100644 pcr-calc/eventlog.h
@@ -46,17 +46,22 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
  create mode 100644 pcr-calc/util.h
  create mode 100644 pcr-calc/uuid.h
 
+diff --git a/Makefile b/Makefile
+index 2ef127e..d896740 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -14,7 +14,7 @@ export ROOTDIR=$(CURDIR)
  include Config.mk
  
  # (txt-test is not included because it requires pathing to Linux src)
--SUBDIRS := tboot lcptools lcptools-v2 tb_polgen utils docs
-+SUBDIRS := tboot lcptools lcptools-v2 tb_polgen utils pcr-calc docs
+-SUBDIRS := tboot safestringlib lcptools lcptools-v2 tb_polgen utils docs
++SUBDIRS := tboot safestringlib lcptools lcptools-v2 tb_polgen utils pcr-calc docs
  
  #
  # build rules
+diff --git a/pcr-calc/Makefile b/pcr-calc/Makefile
+new file mode 100644
+index 0000000..25e0591
 --- /dev/null
 +++ b/pcr-calc/Makefile
 @@ -0,0 +1,70 @@
@@ -130,6 +135,9 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 +
 +%.o : %.c $(BUILD_DEPS)
 +	$(CC) $(CFLAGS) -DNO_TBOOT_LOGLVL -c $< -o $@
+diff --git a/pcr-calc/eventlog.c b/pcr-calc/eventlog.c
+new file mode 100644
+index 0000000..b232449
 --- /dev/null
 +++ b/pcr-calc/eventlog.c
 @@ -0,0 +1,119 @@
@@ -252,6 +260,9 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 +out:
 +	return NULL;
 +}
+diff --git a/pcr-calc/eventlog.h b/pcr-calc/eventlog.h
+new file mode 100644
+index 0000000..7329125
 --- /dev/null
 +++ b/pcr-calc/eventlog.h
 @@ -0,0 +1,42 @@
@@ -297,6 +308,9 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 +struct tpm *parse_tpm20_log(char *buffer, size_t size);
 +
 +#endif
+diff --git a/pcr-calc/hash.c b/pcr-calc/hash.c
+new file mode 100644
+index 0000000..fafaade
 --- /dev/null
 +++ b/pcr-calc/hash.c
 @@ -0,0 +1,210 @@
@@ -510,6 +524,9 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 + * indent-tabs-mode: nil
 + * End:
 + */
+diff --git a/pcr-calc/heap.h b/pcr-calc/heap.h
+new file mode 100644
+index 0000000..c7bf9b7
 --- /dev/null
 +++ b/pcr-calc/heap.h
 @@ -0,0 +1,354 @@
@@ -867,6 +884,9 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 + * indent-tabs-mode: nil
 + * End:
 + */
+diff --git a/pcr-calc/module_hash.c b/pcr-calc/module_hash.c
+new file mode 100644
+index 0000000..4cf1579
 --- /dev/null
 +++ b/pcr-calc/module_hash.c
 @@ -0,0 +1,427 @@
@@ -1297,6 +1317,9 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 +	if (cmdline != NULL) free(cmdline);
 +	return 1;
 +}
+diff --git a/pcr-calc/pcr-calc.c b/pcr-calc/pcr-calc.c
+new file mode 100644
+index 0000000..5e638a0
 --- /dev/null
 +++ b/pcr-calc/pcr-calc.c
 @@ -0,0 +1,376 @@
@@ -1676,6 +1699,9 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 +out:
 +	return ret;
 +}
+diff --git a/pcr-calc/tb_policy.c b/pcr-calc/tb_policy.c
+new file mode 100644
+index 0000000..4f39ae6
 --- /dev/null
 +++ b/pcr-calc/tb_policy.c
 @@ -0,0 +1,82 @@
@@ -1761,6 +1787,9 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 +out:
 +	return NULL;
 +}
+diff --git a/pcr-calc/tb_policy.h b/pcr-calc/tb_policy.h
+new file mode 100644
+index 0000000..cc23f2f
 --- /dev/null
 +++ b/pcr-calc/tb_policy.h
 @@ -0,0 +1,43 @@
@@ -1807,6 +1836,9 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 +tb_hash_t *tb_policy_hash(tb_policy_t *pol, size_t size, uint16_t alg);
 +
 +#endif
+diff --git a/pcr-calc/tpm.c b/pcr-calc/tpm.c
+new file mode 100644
+index 0000000..58b63b9
 --- /dev/null
 +++ b/pcr-calc/tpm.c
 @@ -0,0 +1,408 @@
@@ -2218,6 +2250,9 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 +		pcr_print(&bank->pcrs[i], alg);
 +	}
 +}
+diff --git a/pcr-calc/tpm.h b/pcr-calc/tpm.h
+new file mode 100644
+index 0000000..c482f3f
 --- /dev/null
 +++ b/pcr-calc/tpm.h
 @@ -0,0 +1,186 @@
@@ -2407,6 +2442,9 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 +bool pcr_record_event(struct pcr *p, uint16_t alg, uint32_t type, tb_hash_t *hash);
 +
 +#endif
+diff --git a/pcr-calc/util.c b/pcr-calc/util.c
+new file mode 100644
+index 0000000..5d79ffb
 --- /dev/null
 +++ b/pcr-calc/util.c
 @@ -0,0 +1,167 @@
@@ -2577,6 +2615,9 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 +	evt->digest = digest;
 +	return len;
 +}
+diff --git a/pcr-calc/util.h b/pcr-calc/util.h
+new file mode 100644
+index 0000000..41eaf18
 --- /dev/null
 +++ b/pcr-calc/util.h
 @@ -0,0 +1,46 @@
@@ -2626,6 +2667,9 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 +int read_pcr_event(const char *s, struct pcr_event *evt);
 +
 +#endif
+diff --git a/pcr-calc/uuid.h b/pcr-calc/uuid.h
+new file mode 100644
+index 0000000..7cd7e28
 --- /dev/null
 +++ b/pcr-calc/uuid.h
 @@ -0,0 +1,53 @@
@@ -2682,3 +2726,6 @@ Signed-off-by: Daniel P. Smith <dpsmith@apertussolutions.com>
 +} uuid_t;
 +
 +#endif
+-- 
+2.20.1
+
