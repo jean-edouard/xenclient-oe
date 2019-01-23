@@ -33,3 +33,5 @@ PACKAGECONFIG_CONFARGS += " \
     -nomake examples \
     -nomake tests \
 "
+
+DEPENDS += "libpng"
