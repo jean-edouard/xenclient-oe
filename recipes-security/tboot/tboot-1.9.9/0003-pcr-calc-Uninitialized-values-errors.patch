@@ -1,0 +1,107 @@
+From ec359950675af763698c5129a0a47d31b079e80c Mon Sep 17 00:00:00 2001
+From: Eric Chanudet <chanudete@ainfosec.com>
+Date: Thu, 7 Mar 2019 16:22:03 -0500
+Subject: [PATCH 3/8] pcr-calc: Uninitialized values errors.
+
+Attend a couple of use-of-uninitialized-values errors:
+- `mb` is passed to apply_*_policy() functions, both of which will use
+  `mb[0]` assuming mb[0] has been initialized. Since it could be
+  interesting to assume mb[0] = { 0 } for testing, don't trigger a
+  sanity check if -m is not provided and intialize the array.
+- zero struct tpm and PCR banks allocated by new_tpm().
+- tpm_print() and tpm_dump() should memcmp() on the size of the hash
+  depending on the algorithm provided.
+
+Signed-off-by: Eric Chanudet <chanudete@ainfosec.com>
+---
+ pcr-calc/pcr-calc.c |  2 +-
+ pcr-calc/tpm.c      | 14 ++++++++------
+ pcr-calc/tpm.h      |  1 -
+ 3 files changed, 9 insertions(+), 8 deletions(-)
+
+diff --git a/pcr-calc/pcr-calc.c b/pcr-calc/pcr-calc.c
+index 5e638a0..380baac 100644
+--- a/pcr-calc/pcr-calc.c
++++ b/pcr-calc/pcr-calc.c
+@@ -205,7 +205,7 @@ out:
+ int main(int argc, char *argv[]) {
+ 	extern int optind;
+ 	int opt, flags, mb_count = 0, evt_count = 0, ret = 0;
+-	tb_hash_t mb[20];
++	tb_hash_t mb[20] = { 0 };
+ 	struct pcr_event evt[20];
+ 	struct tpm *t = NULL;
+ 	uint16_t alg_override = 0;
+diff --git a/pcr-calc/tpm.c b/pcr-calc/tpm.c
+index fb7d501..eb2939d 100644
+--- a/pcr-calc/tpm.c
++++ b/pcr-calc/tpm.c
+@@ -153,13 +153,13 @@ struct tpm *new_tpm(uint8_t version)
+ 			    return NULL;
+ 	}
+ 
+-	t = malloc(sizeof(*t));
++	t = calloc(1, sizeof(*t));
+ 	if (!t) {
+ 		return NULL;
+ 	}
+ 
+ 	t->version = version;
+-	t->banks = malloc(banks * sizeof(struct pcr_bank));
++	t->banks = calloc(banks, sizeof(struct pcr_bank));
+ 	if (!t->banks) {
+ 		free(t);
+ 		return NULL;
+@@ -364,6 +364,7 @@ bool tpm_recalculate(struct tpm *t)
+ void tpm_print(struct tpm *t, uint16_t alg)
+ {
+ 	int i,bnum = alg_to_bank(alg);
++	unsigned int hash_size = get_hash_size(alg);
+ 	struct pcr_bank *bank;
+ 	tb_hash_t null_hash;
+ 
+@@ -378,8 +379,8 @@ void tpm_print(struct tpm *t, uint16_t alg)
+ 		int diff;
+ 		errno_t err;
+ 
+-		err = memcmp_s(&(bank->pcrs[i].value), sizeof(tb_hash_t),
+-				&null_hash, sizeof(tb_hash_t), &diff);
++		err = memcmp_s(&(bank->pcrs[i].value), hash_size,
++				&null_hash, hash_size, &diff);
+ 		if (err) {
+ 			error_msg("Invalid value in PCR%d.", i);
+ 			break;
+@@ -395,6 +396,7 @@ void tpm_print(struct tpm *t, uint16_t alg)
+ void tpm_dump(struct tpm *t, uint16_t alg)
+ {
+ 	int i,bnum = alg_to_bank(alg);
++	unsigned int hash_size = get_hash_size(alg);
+ 	struct pcr_bank *bank;
+ 	tb_hash_t null_hash;
+ 
+@@ -409,8 +411,8 @@ void tpm_dump(struct tpm *t, uint16_t alg)
+ 		int diff;
+ 		errno_t err;
+ 
+-		err = memcmp_s(&(bank->pcrs[i].value), sizeof(tb_hash_t),
+-				&null_hash, sizeof(tb_hash_t), &diff);
++		err = memcmp_s(&(bank->pcrs[i].value), hash_size,
++				&null_hash, hash_size, &diff);
+ 		if (err) {
+ 			error_msg("Invalid value in PCR%d.", i);
+ 			break;
+diff --git a/pcr-calc/tpm.h b/pcr-calc/tpm.h
+index c482f3f..e30adc4 100644
+--- a/pcr-calc/tpm.h
++++ b/pcr-calc/tpm.h
+@@ -81,7 +81,6 @@ struct pcr_bank {
+ struct tpm {
+ 	uint8_t version;
+ 	uint16_t alg;
+-	uint8_t num_banks;
+ 	uint8_t active_banks;
+ 	struct pcr_bank *banks;
+ };
+-- 
+2.21.0
+
