@@ -1,0 +1,65 @@
+From 630702f39002e8014e58000b5c483f13d92669ea Mon Sep 17 00:00:00 2001
+From: Eric Chanudet <chanudete@ainfosec.com>
+Date: Wed, 13 Mar 2019 16:45:07 -0400
+Subject: [PATCH 6/9] pcr-calc: Release struct tpm and return errcode.
+
+`ret=0` at initialization and set to 1 if anything goes wrong.
+Fall-through instead of returning 0 and release the struct tpm
+allocated. Do so as well when printing the current eventlog.
+
+Signed-off-by: Eric Chanudet <chanudete@ainfosec.com>
+---
+ pcr-calc/pcr-calc.c | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
+
+diff --git a/pcr-calc/pcr-calc.c b/pcr-calc/pcr-calc.c
+index 380baac..4963019 100644
+--- a/pcr-calc/pcr-calc.c
++++ b/pcr-calc/pcr-calc.c
+@@ -340,25 +340,25 @@ int main(int argc, char *argv[]) {
+ 
+ 	if (flags & FLAG_CURRENT) {
+ 		tpm_print(t, t->alg);
+-		return 0;
++		goto out;
+ 	}
+ 
+ 	if (flags & FLAG_LOG) {
+ 		tpm_dump(t, t->alg);
+-		return 0;
++		goto out;
+ 	}
+ 
+ 	if (flags & FLAG_DA) {
+ 		if (!apply_da_policy(t, policy_file, pol_size, mb, mb_count, evt, evt_count)) {
+ 			error_msg("failed applying DA policy.\n");
+ 			ret = 1;
+-			goto out_destroy;
++			goto out;
+ 		}
+ 	} else {
+ 		if (!apply_lg_policy(t, policy_file, pol_size, mb, mb_count, evt, evt_count)) {
+ 			error_msg("failed applying LG policy.\n");
+ 			ret = 1;
+-			goto out_destroy;
++			goto out;
+ 		}
+ 	}
+ 
+@@ -367,10 +367,9 @@ int main(int argc, char *argv[]) {
+ 	else
+ 		tpm_print(t, t->alg);
+ 
+-	return 0;
+-
+-out_destroy:
+-	destroy_tpm(t);
+ out:
++	if (t != NULL)
++		destroy_tpm(t);
++
+ 	return ret;
+ }
+-- 
+2.21.0
+
