@@ -27,6 +27,7 @@ SRC_URI = " \
     file://0004-module_hash-Use-safestringlib.patch \
     file://0005-pcr-calc-No-TPM-2.0-assumption-recording-events.patch \
     file://0006-pcr-calc-Release-struct-tpm-and-return-errcode.patch \
+    file://0007-pcr-calc-refactor-and-read-event-log-from-file.patch \
 "
 
 SRC_URI[md5sum] = "b5b235ddcecceb3663975e28be16d0d9"
