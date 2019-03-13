@@ -29,6 +29,7 @@ SRC_URI = " \
     file://0006-pcr-calc-Release-struct-tpm-and-return-errcode.patch \
     file://0007-pcr-calc-refactor-and-read-event-log-from-file.patch \
     file://0008-pcr-calc-Add-0x40f-event-emulation.patch \
+    file://0009-acmmatch-Add-utility-to-match-ACM-with-platform.patch \
 "
 
 SRC_URI[md5sum] = "b5b235ddcecceb3663975e28be16d0d9"
