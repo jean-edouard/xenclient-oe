@@ -21,6 +21,15 @@ SRC_URI = " \
     file://0012-Find-e820-regions-that-include-the-limit.patch \
     file://0013-Add-support-for-launching-64-bit-PE-kernels.patch \
     file://0014-safestringlib-Attend-GCC-warnings.patch \
+    file://0001-pcr-calc-Convert-missing-memset-to-safelib.patch \
+    file://0002-pcr-calc-Generic-print_hash-function.patch \
+    file://0003-pcr-calc-Uninitialized-values-errors.patch \
+    file://0004-module_hash-Use-safestringlib.patch \
+    file://0005-pcr-calc-No-TPM-2.0-assumption-recording-events.patch \
+    file://0006-pcr-calc-Release-struct-tpm-and-return-errcode.patch \
+    file://0007-pcr-calc-refactor-and-read-event-log-from-file.patch \
+    file://0008-pcr-calc-Add-0x40f-event-emulation.patch \
+    file://0009-acmmatch-Add-utility-to-match-ACM-with-platform.patch \
 "
 
 SRC_URI[md5sum] = "b5b235ddcecceb3663975e28be16d0d9"
