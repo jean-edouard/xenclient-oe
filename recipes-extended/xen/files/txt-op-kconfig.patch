@@ -1,0 +1,13 @@
+--- a/xen/common/Kconfig
++++ b/xen/common/Kconfig
+@@ -143,6 +143,10 @@ config XSM_POLICY
+ 
+ 	  If unsure, say Y.
+ 
++config TXT_OP
++	bool "Compile Xen with the txt_op hypercall"
++	default n
++
+ config LATE_HWDOM
+ 	bool "Dedicated hardware domain"
+ 	default n
