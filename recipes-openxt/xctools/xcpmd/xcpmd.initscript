@@ -29,6 +29,7 @@ PIDFILE="/var/run/xcpmd.pid"
 
 start() {
  	echo -n "Starting xcpmd: "
+	wait_for_db
 	start-stop-daemon --start --quiet --oknodo --pidfile "${PIDFILE}" --exec "${PROG}"
 	echo "OK"
 }
@@ -41,6 +42,25 @@ stop() {
 restart() {
 	stop
 	start
+}
+
+# make sure the db is fully initialized so xcpmd
+# can read the rules it needs
+wait_for_db() {
+	attempts=0
+	max_attempts=5
+
+	while [ $attempts -lt $max_attempts ]; do
+		xec -s com.citrix.xenclient.db >/dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			return
+		fi
+
+		echo "db unavailable over dbus, trying again" | logger -t xcpmd
+		attempts=$((attempts + 1))
+		sleep .2
+	done
+	echo "WARN: db may be unavailable over dbus" | logger -t xcpmd
 }
 
 case "$1" in
