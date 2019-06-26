@@ -1,0 +1,18 @@
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -34,12 +34,14 @@ if SYMVERS
+     libtirpc_la_LDFLAGS += -Wl,--version-script=$(srcdir)/libtirpc.map
+ endif
+ 
++libtirpc_la_CFLAGS = -fPIC
++
+ ## Secure-RPC
+ if GSS
+     libtirpc_la_SOURCES += auth_gss.c authgss_prot.c svc_auth_gss.c \
+ 			   rpc_gss_utils.c
+     libtirpc_la_LDFLAGS += $(GSSAPI_LIBS)
+-    libtirpc_la_CFLAGS = -DHAVE_RPCSEC_GSS $(GSSAPI_CFLAGS)
++    libtirpc_la_CFLAGS += -DHAVE_RPCSEC_GSS $(GSSAPI_CFLAGS)
+ endif
+ 
+ libtirpc_la_SOURCES += key_call.c key_prot_xdr.c getpublickey.c
