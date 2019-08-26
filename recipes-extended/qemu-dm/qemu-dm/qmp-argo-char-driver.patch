@@ -7,7 +7,7 @@
 +chardev-obj-$(CONFIG_XEN) += char-argo.o
 --- /dev/null
 +++ b/chardev/char-argo.c
-@@ -0,0 +1,331 @@
+@@ -0,0 +1,348 @@
 +/*
 + * QEMU System Emulator
 + *
@@ -85,20 +85,37 @@
 +static int argo_chr_write(Chardev *chr, const uint8_t *buf, int len)
 +{
 +    ArgoChardev *s = ARGO_CHARDEV(chr);
-+    int ret;
++    int write_len = len;
++    int written = 0;
 +
-+    if (s->stream) {
-+        ret = argo_send(s->fd, buf, len, 0);
-+    } else {
-+        ret = argo_sendto(s->fd, buf, len, 0, &s->remote_addr);
-+    }
-+    if (ret != len) {
-+        fprintf(stderr, "%s error: argo_sendto() failed (%s) - %d %d.\n",
-+                ARGO_CHARDRV_NAME, strerror(errno), ret, len);
-+        return 0;
++    while ( written < len ) {
++        int ret;
++
++        if (s->stream) {
++            ret = argo_send(s->fd, buf, write_len, 0);
++        } else {
++            ret = argo_sendto(s->fd, buf, write_len, 0, &s->remote_addr);
++        }
++
++        if ( ret == -1 && errno == EMSGSIZE) {
++            /* If the write was too big, try a smaller piece */
++            write_len /= 2;
++            continue;
++        } else if (ret == -1) {
++            fprintf(stderr, "%s error: argo_sendto() failed (%s) - %d %d.\n",
++                    ARGO_CHARDRV_NAME, strerror(errno), ret, len);
++            return written ?: ret;
++        }
++
++        written += ret;
++        buf += ret;
++
++        if (len - written < write_len) {
++            write_len = len - written;
++        }
 +    }
 +
-+    return ret;
++    return written;
 +}
 +
 +static int argo_chr_read_poll(void *opaque)
@@ -224,7 +241,7 @@
 +    localport = localport_str ? strtoul(localport_str, NULL, 0) : 0;
 +
 +    backend->type = CHARDEV_BACKEND_KIND_ARGO;
-+    if (domid > 0x7ff4) {
++    if (domid >= DOMID_FIRST_RESERVED) {
 +        error_setg(errp, "chardev: argo: domid invalid");
 +        return;
 +    }
