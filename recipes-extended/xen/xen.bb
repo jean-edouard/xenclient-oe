@@ -85,6 +85,10 @@ FILES_${PN}-xen-shim = "\
     ${libdir}/xen/boot/xen-shim \
     "
 
+RDEPENDS_${PN}-scripts-common += " \
+    ${PN}-cmp-fd-file-inode \
+"
+
 INITSCRIPT_PACKAGES =+ "${PN}-console ${PN}-xenstored-c"
 INITSCRIPT_NAME_${PN}-console = "xenconsoled"
 INITSCRIPT_PARAMS_${PN}-console = "defaults 20"
@@ -164,6 +168,8 @@ do_install() {
     # The C xenstored uses one additional command line argument:
     sed 's/EXECUTABLE --/EXECUTABLE --internal-db --/' \
         -i ${D}${sysconfdir}/init.d/xenstored.${PN}-xenstored-c
+
+    install -d ${D}${libdir}/xen/bin/
 
     # These files are not packaged, removing them to silence QA warnings
     #   sbindir == /usr/sbin, bindir == /usr/bin, sysconfig == /etc
