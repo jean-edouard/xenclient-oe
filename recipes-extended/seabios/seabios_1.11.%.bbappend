@@ -2,7 +2,6 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/patches:"
 
 SRC_URI += " \
     file://halt-if-no-bootable.patch \
-    file://init-vgahooks-if-optionroms-deployed.patch \
     file://xci-cpuid-signature.patch \
     file://amd-gpu-support.patch \
     file://only-boot-selected-devices.patch \
