@@ -2,8 +2,11 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/${BPN}:"
 
 SRC_URI += " \
     file://yocto-initscripts.patch \
+<<<<<<< HEAD
     file://0001-lvmetad-fix-segfault-on-i386.patch \
     file://volatiles.99_lvmetad \
+=======
+>>>>>>> lvm2: Upgrade to 2.03.02 from usptream.
 "
 
 # meta-oe recipe will already _append the autotools do_install(), and
@@ -35,4 +38,7 @@ CONFFILES_${PN}-conf = " \
 
 FILES_${PN} += " \
     ${sysconfdir}/default/volatiles \
+"
+RDEPENDS_${PN} += " \
+    bash \
 "
