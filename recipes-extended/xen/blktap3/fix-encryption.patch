@@ -1,0 +1,169 @@
+################################################################################
+SHORT DESCRIPTION:
+################################################################################
+Fix vhd-encryption failures caused by upstream blktap3 changes
+
+################################################################################
+LONG DESCRIPTION:
+################################################################################
+After upstreaming the OpenXT blktap encryption logic, several changes were
+merged into the upstream blktap repository that broke vhd encryption on OpenXT.
+These commits were 032df683d4d86502e2193337d9546e5b07429e77 and
+63e7784aaa05f8c2f96a09af50f6131af11f26b9
+A summary of the problems are as follows:
+
+ 1. The find key logic was if-def'd out. We now set this in blktap3.bb
+ 2. Because of 1, the redefinition of key causes a variable redefine error when
+    we turn on the if-def. Rename the var in function def to avoid this.
+ 3. 63e7784 only loads libblockcrypto if -E is set when calling tap-ctl-open.
+    Firstly, we always want to load the crypto support, so drop the dummy_load
+    routine. Secondly, we use tap-ctl-create, which was defaulting to NULL and 
+    0 for encryption and keysize since -E is only defined for tap-ctl-open.
+    This is also addressed by dropping the dummy load and if check
+ 4. findkey() sets keysize to 512 or 256, but an xts case deals with bytes,
+    so we divide by 8 before xts_aes_setkey()
+
+################################################################################
+CHANGELOG
+################################################################################
+Authors:
+Chris Rogers <rogersc@ainfosec.com>
+
+################################################################################
+REMOVAL
+################################################################################
+When upstreamed.
+
+################################################################################
+UPSTREAM PLAN
+################################################################################
+Should be upstreamed back to xapi project, but will take more time to update our
+implementation to fit their design changes. This needs to be in our tree ASAP
+so we patch here first, and upstream later.
+
+################################################################################
+INTERNAL DEPENDENCIES
+################################################################################
+
+################################################################################
+PATCHES
+################################################################################
+--- a/drivers/block-crypto.c
++++ b/drivers/block-crypto.c
+@@ -344,7 +344,7 @@ out:
+ #endif
+ 
+ int
+-vhd_open_crypto(vhd_context_t *vhd, const uint8_t *key, size_t key_bytes, const char *name)
++vhd_open_crypto(vhd_context_t *vhd, const uint8_t *keyin, size_t key_bytes, const char *name)
+ {
+ 	struct vhd_keyhash keyhash;
+ 	int err;
+@@ -402,7 +402,7 @@ vhd_open_crypto(vhd_context_t *vhd, cons
+ 		return err;
+ 	}
+ 
+-	xts_aes_setkey(vhd->xts_tfm, key, key_bytes);
++	xts_aes_setkey(vhd->xts_tfm, key, keysize / 8);
+ 	return 0;
+ }
+ 
+--- a/drivers/block-vhd.c
++++ b/drivers/block-vhd.c
+@@ -79,7 +79,7 @@
+ 
+ unsigned int SPB;
+ 
+-#define LIBBLOCKCRYPTO_NAME "libblockcrypto.so"
++#define LIBBLOCKCRYPTO_NAME "libblockcrypto.so.0"
+ 
+ #define DEBUGGING   2
+ #define MICROSOFT_COMPAT
+@@ -674,18 +674,6 @@ vhd_log_open(struct vhd_state *s)
+ 		allocated, full, s->next_db);
+ }
+ 
+-static int dummy_open_crypto(
+-	vhd_context_t *vhd, const uint8_t *key, size_t key_bytes,
+-	const char *name)
+-{
+-	if (key) {
+-		EPRINTF("Encryption requested with no support library\n");
+-		return -EINVAL;
+-	}
+-
+-	return 0;
+-}
+-
+ static int
+ __load_crypto(struct td_vbd_encryption *encryption)
+ {
+@@ -695,41 +683,35 @@ __load_crypto(struct td_vbd_encryption *
+ 		return -ENOMEM;
+ 	}
+ 
+-	if (encryption->encryption_key == NULL) {
+-		crypto_interface->vhd_open_crypto = dummy_open_crypto;
+-		crypto_interface->vhd_crypto_encrypt = NULL;
+-		crypto_interface->vhd_crypto_decrypt = NULL;
+-	} else {
+-		dlerror();
+-		crypto_handle = dlopen(LIBBLOCKCRYPTO_NAME, RTLD_LAZY);
+-		if (crypto_handle == NULL) {
+-			EPRINTF("Failed to load crypto library. %s\n",
+-				dlerror());
+-			return -EINVAL;
+-		}
++	dlerror();
++	crypto_handle = dlopen(LIBBLOCKCRYPTO_NAME, RTLD_LAZY);
++	if (crypto_handle == NULL) {
++		EPRINTF("Failed to load crypto library. %s\n",
++			dlerror());
++		return -EINVAL;
++	}
+ 
+-		dlerror();
+-		crypto_interface->vhd_open_crypto =
+-			(int (*)(vhd_context_t *, const uint8_t *, size_t,
+-				 const char *))
+-			dlsym (crypto_handle, "vhd_open_crypto");
+-		crypto_interface->vhd_crypto_encrypt =
+-			(void (*)(vhd_context_t *, td_request_t *,
+-				  char *))
+-			dlsym(crypto_handle, "vhd_crypto_encrypt");
+-		crypto_interface->vhd_crypto_decrypt =
+-			(void (*)(vhd_context_t *, td_request_t *))
+-			dlsym(crypto_handle, "vhd_crypto_decrypt");
+-
+-		if (!crypto_interface->vhd_open_crypto ||
+-		    !crypto_interface->vhd_crypto_encrypt ||
+-		    !crypto_interface->vhd_crypto_decrypt) {
+-			EPRINTF("Failed to load crypto routines from dynamic library. %s\n",
+-				dlerror());
+-			return -EINVAL;
+-		}
+-		DPRINTF("Loaded cryptography library\n");
++	dlerror();
++	crypto_interface->vhd_open_crypto =
++		(int (*)(vhd_context_t *, const uint8_t *, size_t,
++			 const char *))
++		dlsym (crypto_handle, "vhd_open_crypto");
++	crypto_interface->vhd_crypto_encrypt =
++		(void (*)(vhd_context_t *, td_request_t *,
++			  char *))
++		dlsym(crypto_handle, "vhd_crypto_encrypt");
++	crypto_interface->vhd_crypto_decrypt =
++		(void (*)(vhd_context_t *, td_request_t *))
++		dlsym(crypto_handle, "vhd_crypto_decrypt");
++
++	if (!crypto_interface->vhd_open_crypto ||
++		!crypto_interface->vhd_crypto_encrypt ||
++		!crypto_interface->vhd_crypto_decrypt) {
++		EPRINTF("Failed to load crypto routines from dynamic library. %s\n",
++			dlerror());
++		return -EINVAL;
+ 	}
++	DPRINTF("Loaded cryptography library\n");
+ 
+ 	return 0;
+ }
