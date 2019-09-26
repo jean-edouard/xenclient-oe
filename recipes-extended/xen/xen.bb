@@ -88,7 +88,7 @@ FILES_${PN}-xen-shim = "\
     "
 
 RDEPENDS_${PN}-scripts-common += " \
-    perl \
+    ${PN}-cmp-fd-file-inode \
 "
 
 INITSCRIPT_PACKAGES =+ "${PN}-console ${PN}-xenstored-c"
@@ -178,6 +178,8 @@ do_install() {
     # The C xenstored uses one additional command line argument:
     sed 's/EXECUTABLE --/EXECUTABLE --internal-db --/' \
         -i ${D}${sysconfdir}/init.d/xenstored.${PN}-xenstored-c
+
+    install -d ${D}${libdir}/xen/bin/
 
     # These files are not packaged, removing them to silence QA warnings
     VOLATILE_DIRS=" \
