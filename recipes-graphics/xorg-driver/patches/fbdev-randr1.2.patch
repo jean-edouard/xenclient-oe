@@ -9,8 +9,8 @@
  
  /* all driver need this */
  #include "xf86.h"
-@@ -38,6 +40,9 @@
- #include <pciaccess.h>
+@@ -45,6 +47,9 @@
+ #define HAVE_SHADOW_3224
  #endif
  
 +#include "xf86Crtc.h"
@@ -19,7 +19,7 @@
  static Bool debug = 0;
  
  #define TRACE_ENTER(str) \
-@@ -193,6 +198,8 @@ typedef struct {
+@@ -195,6 +200,8 @@ typedef struct {
  	DGAModePtr			pDGAMode;
  	int				nDGAMode;
  	OptionInfoPtr			Options;
@@ -28,15 +28,7 @@
  } FBDevRec, *FBDevPtr;
  
  #define FBDEVPTR(p) ((FBDevPtr)((p)->driverPrivate))
-@@ -230,7 +237,6 @@ FBDevIdentify(int flags)
- 	xf86PrintChipsets(FBDEV_NAME, "driver for framebuffer", FBDevChipsets);
- }
- 
--
- #ifdef XSERVER_LIBPCIACCESS
- static Bool FBDevPciProbe(DriverPtr drv, int entity_num,
- 			  struct pci_device *dev, intptr_t match_data)
-@@ -276,6 +282,13 @@ static Bool FBDevPciProbe(DriverPtr drv,
+@@ -307,6 +314,13 @@ static Bool FBDevPciProbe(DriverPtr drv,
  }
  #endif
  
@@ -50,19 +42,19 @@
  
  static Bool
  FBDevProbe(DriverPtr drv, int flags)
-@@ -372,7 +385,7 @@ FBDevProbe(DriverPtr drv, int flags)
+@@ -403,7 +417,7 @@ FBDevProbe(DriverPtr drv, int flags)
  		    pScrn->Probe         = FBDevProbe;
  		    pScrn->PreInit       = FBDevPreInit;
  		    pScrn->ScreenInit    = FBDevScreenInit;
--		    pScrn->SwitchMode    = fbdevHWSwitchModeWeak();
+-		    pScrn->SwitchMode    = fbdevSwitchMode;
 +		    pScrn->SwitchMode    = FBDevSwitchMode;
- 		    pScrn->AdjustFrame   = fbdevHWAdjustFrameWeak();
- 		    pScrn->EnterVT       = fbdevHWEnterVTWeak();
- 		    pScrn->LeaveVT       = fbdevHWLeaveVTWeak();
-@@ -389,12 +402,281 @@ FBDevProbe(DriverPtr drv, int flags)
+ 		    pScrn->AdjustFrame   = fbdevAdjustFrame;
+ 		    pScrn->EnterVT       = fbdevEnterVT;
+ 		    pScrn->LeaveVT       = fbdevLeaveVT;
+@@ -419,6 +433,270 @@ FBDevProbe(DriverPtr drv, int flags)
+ 	return foundScreen;
  }
  
- static Bool
 +FBDevRebuildPixmap(ScrnInfoPtr pScrn)
 +{
 +        FBDevPtr fPtr = FBDEVPTR(pScrn);
@@ -327,13 +319,13 @@
 +        .destroy = FBDevOutputDestroy
 +};
 +
-+static Bool
+ static Bool
  FBDevPreInit(ScrnInfoPtr pScrn, int flags)
  {
- 	FBDevPtr fPtr;
- 	int default_depth, fbbpp;
+@@ -427,6 +705,10 @@ FBDevPreInit(ScrnInfoPtr pScrn, int flag
  	const char *s;
  	int type;
+ 	void *pci_dev = NULL;
 +        int i;
 +        ClockRangePtr clockRanges;
 +        xf86OutputPtr output;
@@ -341,7 +333,7 @@
  
  	if (flags & PROBE_DETECT) return FALSE;
  
-@@ -447,6 +729,19 @@ FBDevPreInit(ScrnInfoPtr pScrn, int flag
+@@ -512,6 +794,19 @@ FBDevPreInit(ScrnInfoPtr pScrn, int flag
  	if (!xf86SetDefaultVisual(pScrn, -1))
  		return FALSE;
  
@@ -361,7 +353,7 @@
  	/* We don't currently support DirectColor at > 8bpp */
  	if (pScrn->depth > 8 && pScrn->defaultVisual != TrueColor) {
  		xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "requested default visual"
-@@ -466,10 +761,10 @@ FBDevPreInit(ScrnInfoPtr pScrn, int flag
+@@ -531,10 +826,10 @@ FBDevPreInit(ScrnInfoPtr pScrn, int flag
  	pScrn->progClock = TRUE;
  	pScrn->rgbBits   = 8;
  	pScrn->chipset   = "fbdev";
@@ -374,7 +366,7 @@
  
  	/* handle options */
  	xf86CollectOptions(pScrn, NULL);
-@@ -517,21 +812,9 @@ FBDevPreInit(ScrnInfoPtr pScrn, int flag
+@@ -588,21 +883,9 @@ FBDevPreInit(ScrnInfoPtr pScrn, int flag
  	  }
  	}
  
@@ -399,7 +391,7 @@
  	}
  
  	if (NULL == pScrn->modes)
-@@ -688,6 +971,8 @@ FBDevScreenInit(SCREEN_INIT_ARGS_DECL)
+@@ -802,6 +1085,8 @@ FBDevScreenInit(SCREEN_INIT_ARGS_DECL)
  	fbdevHWSaveScreen(pScreen, SCREEN_SAVER_ON);
  	fbdevHWAdjustFrame(ADJUST_FRAME_ARGS(pScrn, 0, 0));
  
@@ -408,7 +400,7 @@
  	/* mi layer */
  	miClearVisualTypes();
  	if (pScrn->bitsPerPixel > 8) {
-@@ -882,6 +1167,9 @@ FBDevScreenInit(SCREEN_INIT_ARGS_DECL)
+@@ -998,6 +1283,9 @@ FBDevScreenInit(SCREEN_INIT_ARGS_DECL)
  			   "(%d) encountered in FBDevScreenInit()\n", type);
  		return FALSE;
  	}
@@ -416,5 +408,5 @@
 +	xf86CrtcScreenInit(pScreen);
 +
  	flags = CMAP_PALETTED_TRUECOLOR;
- 	if(!xf86HandleColormaps(pScreen, 256, 8, fbdevHWLoadPaletteWeak(), 
- 				NULL, flags))
+ 	if(!xf86HandleColormaps(pScreen, 256, 8, fbdevLoadPalette, NULL, flags))
+ 		return FALSE;
