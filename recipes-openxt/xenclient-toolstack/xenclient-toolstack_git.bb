@@ -35,9 +35,6 @@ FILES_${PN}-libs-dbg = " \
     ${sitelibdir}/*/.debug \
 "
 
-DEB_SUITE = "wheezy"
-DEB_ARCH = "i386"
-
 PV = "0+git${SRCPV}"
 
 SRCREV = "${AUTOREV}"
