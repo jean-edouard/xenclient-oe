@@ -7,7 +7,7 @@
 +chardev-obj-$(CONFIG_XEN) += char-argo.o
 --- /dev/null
 +++ b/chardev/char-argo.c
-@@ -0,0 +1,345 @@
+@@ -0,0 +1,359 @@
 +/*
 + * QEMU System Emulator
 + *
@@ -88,6 +88,13 @@
 +    int write_len = len;
 +    int ret;
 +
++    if (!s->connected) {
++        /* This is important to drop events when not connected. */
++        fprintf(stderr, "%s not connected, dropping %d bytes\n",
++        	ARGO_CHARDRV_NAME, len);
++        return len;
++    }
++
 + again:
 +    if (s->stream) {
 +        ret = argo_send(s->fd, buf, write_len, 0);
@@ -167,6 +174,10 @@
 +    if (!s->stream) {
 +        if (s->connected == 0 && !strncmp((char*)(s->buf), ARGO_MAGIC_CONNECT, 4)) {
 +            fprintf(stderr, "argo_recvfrom() returned ARGO_MAGIC_CONNECT, connecting.\n");
++            /* change connected before other chardev calls to avoid calling
++               argo_chr_write before it is set. */
++            s->connected = 1;
++            fprintf(stderr, "%s: connected 0 -> 1\n", __func__);
 +            argo_chr_update_read_handler(chr);
 +            qemu_chr_be_event(chr, CHR_EVENT_OPENED);
 +            if (!chr->gsource) {
@@ -174,10 +185,13 @@
 +                                                 argo_chr_read_poll,
 +                                                 argo_chr_read, chr, chr->gcontext);
 +            }
-+            s->connected = 1;
 +            return FALSE;
 +        }
 +        if (s->connected == 1 && !strncmp((char*)(s->buf), ARGO_MAGIC_DISCONNECT, 4)) {
++            /* change connected before other chardev calls to avoid calling
++               argo_chr_write before it is cleared. */
++            s->connected = 0;
++            fprintf(stderr, "%s: connected 1 -> 0\n", __func__);
 +            argo_chr_update_read_handler(chr);
 +            qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
 +            if (!chr->gsource) {
@@ -186,7 +200,6 @@
 +                                                 argo_chr_read, chr, chr->gcontext);
 +            }
 +            fprintf(stderr, "argo_recvfrom() returned ARGO_MAGIC_DISCONNECT, closing.\n");
-+            s->connected = 0;
 +            return FALSE;
 +        }
 +    }
@@ -324,6 +337,7 @@
 +
 +    /* TODO currently starting up open */
 +    s->connected = 1;
++    fprintf(stderr, "%s: connected  = 1\n", __func__);
 +
 +    fprintf(stderr, "Opened Argo chardev\n");
 +}
