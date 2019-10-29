@@ -2,6 +2,8 @@ DESCRIPTION = "XenClient vhd tools"
 LICENSE = "GPLv2"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/GPL-2.0;md5=801f80980d171dd6425610833a22dbe6"
 
+RDEPENDS_${PN} += "bash"
+
 SRC_URI = "file://vhd-copy \
            file://vhd-dm-create \
            file://vhd-dm-remove \

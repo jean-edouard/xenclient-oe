@@ -31,7 +31,7 @@ USERADD_PACKAGES = "${PN}"
 GROUPADD_PARAM_${PN} = "--gid 421 tss"
 USERADD_PARAM_${PN} = "--system --home-dir /boot/system/tpm --shell /bin/false --gid tss --uid 421 tss"
 
-pkg_postinst_${PN}() {
+pkg_postinst_ontarget_${PN}() {
         chown tss:tss $D/etc/tcsd.conf
         mkdir -p $D/boot/system/tpm
         chown tss:tss $D/boot/system/tpm

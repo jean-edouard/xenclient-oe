@@ -11,6 +11,8 @@ SRC_URI = "git://${OPENXT_GIT_MIRROR}/vusb-daemon.git;protocol=${OPENXT_GIT_PROT
            file://xenclient-vusb.initscript \
            "
 
+CFLAGS_append += " -Wno-error=stringop-overflow -Wno-error=stringop-truncation -Wno-error=format-overflow "
+
 # workaround for broken configure.in
 EXTRA_OECONF += "--with-libexpat=${STAGING_LIBDIR}"
 EXTRA_OECONF += "--with-libxenstore=${STAGING_LIBDIR}"

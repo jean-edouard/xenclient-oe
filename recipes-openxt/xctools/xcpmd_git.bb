@@ -12,7 +12,7 @@ SRC_URI = "git://${OPENXT_GIT_MIRROR}/xctools.git;protocol=${OPENXT_GIT_PROTOCOL
 
 CFLAGS_prepend += " -I${STAGING_INCDIR}/libnl3 "
 
-CFLAGS_append += " -Wno-unused-parameter -Wno-deprecated-declarations "
+CFLAGS_append += " -Wno-unused-parameter -Wno-deprecated-declarations -Wno-error=stringop-overflow -Wno-error=absolute-value -Wno-error=format-overflow -Wno-error=stringop-truncation "
 
 S = "${WORKDIR}/git/xcpmd"
 

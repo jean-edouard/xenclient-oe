@@ -33,7 +33,6 @@ do_install_append() {
 
 PACKAGES += " \
             initramfs-module-functions \
-            initramfs-module-lvm \
             initramfs-module-bootfs \
             initramfs-module-tpm \
             initramfs-module-tpm2 \
