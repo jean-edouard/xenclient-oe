@@ -32,10 +32,16 @@ GROUPADD_PARAM_${PN} = "--gid 421 tss"
 USERADD_PARAM_${PN} = "--system --home-dir /boot/system/tpm --shell /bin/false --gid tss --uid 421 tss"
 
 pkg_postinst_${PN}() {
-        chown tss:tss $D/etc/tcsd.conf
-        mkdir -p $D/boot/system/tpm
-        chown tss:tss $D/boot/system/tpm
-        install -o tss -g tss -m 600 $D/usr/share/trousers/system.data.auth $D/boot/system/tpm/system.data
+    #! /bin/sh -e
+    chown tss:tss "$D/etc/tcsd.conf"
+    if [ "$D" = "" ]; then
+        # firstboot.sh will take care of copying the system.data.auth in the
+        # config partition on first boot. The following is left for development
+        # purposes should the package be installed manually on a RW dom0
+        # filesystem.
+        install -o tss -g tss -m 700 /boot/system/tpm
+        install -o tss -g tss -m 600 /usr/share/trousers/system.data.auth /boot/system/tpm/system.data
+    fi
 }
 
 do_install_append() {
