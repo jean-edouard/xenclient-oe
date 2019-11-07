@@ -1,5 +1,5 @@
 SRC_URI += " \
-    http://downloadmirror.intel.com/19186/eng/PREBOOT.EXE;unpack=0;name=PREBOOT \
+    https://downloadmirror.intel.com/29137/eng/PREBOOT.EXE;unpack=0;name=PREBOOT \
 "
 DEPENDS_append += " \
     unzip-native \
