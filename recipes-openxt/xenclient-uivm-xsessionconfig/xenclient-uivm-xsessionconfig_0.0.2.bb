@@ -100,4 +100,5 @@ FILES_${PN} = " \
 
 RDEPENDS_${PN} += " \
     xrdb \
+    bash \
 "
