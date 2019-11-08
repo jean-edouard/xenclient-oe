@@ -5,8 +5,9 @@ DEPENDS_append += " \
     unzip-native \
 "
 
-# PREBOOT.EXE, OS independent, latest version (currently 24.2).
-SRC_URI[PREBOOT.sha256sum] = "090137bc8af0b05c1ae2b27b8b7851d295cb1225880fb4657c7ddc470b261485"
+# PREBOOT.EXE, OS independent, latest version (currently 24.3).
+SRC_URI[PREBOOT.md5sum] = "8660641e184dafdeb78b8ca1fbd837f7"
+SRC_URI[PREBOOT.sha256sum] = "83dac749d74a6a54d7451bee79f9e1d605c4e2775d6b524d39030b248989092a"
 
 do_extract_bootutil() {
     mkdir -p "${S}/Intel3.5/EFIX64"
