@@ -9,14 +9,10 @@ DEPENDS_append += " \
 SRC_URI[PREBOOT.md5sum] = "8660641e184dafdeb78b8ca1fbd837f7"
 SRC_URI[PREBOOT.sha256sum] = "83dac749d74a6a54d7451bee79f9e1d605c4e2775d6b524d39030b248989092a"
 
-do_extract_bootutil() {
+do_configure_prepend() {
     mkdir -p "${S}/Intel3.5/EFIX64"
     unzip -q -p "${WORKDIR}/PREBOOT.EXE" "APPS/EFI/EFIx64/E3522X2.EFI" > "${S}/Intel3.5/EFIX64/E3522X2.EFI"
 }
-addtask do_extract_bootutil before do_configure after do_unpack
-do_extract_bootutil[doc] = "Extract Intel's proprietary E1000 NIC driver to be embedded in OVMF image."
-do_extract_bootutil[depends] = "${PN}:do_prepare_recipe_sysroot"
-do_extract_bootutil[dirs] = "${B}"
 
 do_compile_class-target_append() {
     bbnote "Building with E1000 (support for netboot)."
