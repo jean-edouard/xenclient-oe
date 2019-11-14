@@ -1,10 +1,8 @@
 --- a/policy/modules/system/getty.fc
 +++ b/policy/modules/system/getty.fc
-@@ -2,6 +2,7 @@
- /etc/mgetty(/.*)?		gen_context(system_u:object_r:getty_etc_t,s0)
+@@ -12,3 +12,5 @@
  
- /sbin/.*getty		--	gen_context(system_u:object_r:getty_exec_t,s0)
+ /var/spool/fax(/.*)?		gen_context(system_u:object_r:getty_runtime_t,s0)
+ /var/spool/voice(/.*)?		gen_context(system_u:object_r:getty_runtime_t,s0)
++
 +/bin/tinylogin			gen_context(system_u:object_r:getty_exec_t,s0)
- 
- /usr/sbin/.*getty		--	gen_context(system_u:object_r:getty_exec_t,s0)
- 
