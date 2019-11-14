@@ -13,8 +13,6 @@ SRC_URI = "git://xenbits.xen.org/xen.git;branch=${XEN_BRANCH}"
 require ${@bb.utils.contains('DISTRO_FEATURES', 'blktap2', 'xen-blktap2.inc', 'xen-blktap3.inc', d)}
 
 SRC_URI_append = " \
-    file://0001-x86-IO-APIC-fix-build-with-gcc9.patch \
-    file://0002-trace-fix-build-with-gcc9.patch \
     file://defconfig \
     file://config.patch \
     file://disable-xen-root-check.patch \
