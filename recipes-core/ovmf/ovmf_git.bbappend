@@ -14,7 +14,7 @@ do_extract_bootutil() {
 }
 addtask do_extract_bootutil before do_configure after do_unpack
 do_extract_bootutil[doc] = "Extract Intel's proprietary E1000 NIC driver to be embedded in OVMF image."
-do_extract_bootutil[deptask] = "do_populate_sysroot"
+do_extract_bootutil[deptask] = "${PN}:do_prepare_recipe_sysroot"
 do_extract_bootutil[dirs] = "${B}"
 
 do_compile_class-target_append() {
